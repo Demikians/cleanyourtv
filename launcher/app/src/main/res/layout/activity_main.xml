@@ -183,11 +183,25 @@
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:layout_marginStart="4dp"
-                    android:textColor="#8CFFFFFF"
-                    android:textSize="12sp"
+                    android:textColor="#FF4BDCA5"
+                    android:textSize="13sp"
                     android:fontFamily="@string/font_medium"
                     android:letterSpacing="0.22"
                     android:textAllCaps="true" />
+
+                <TextView
+                    android:id="@+id/brandTagline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="2dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="#FF91B7A6"
+                    android:textSize="9sp"
+                    android:fontFamily="@string/font_medium"
+                    android:letterSpacing="0.16"
+                    android:visibility="gone" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
