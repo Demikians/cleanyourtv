@@ -429,8 +429,9 @@ final class Config {
             wallpapers.clear();
             wallpaper = null;
             wallpaperEnabled = false;
-        } else if (wallpaperChoice != null && dir != null) {
-            List<File> availableWallpapers = WallpaperRotation.images(new File(dir, "wallpapers"));
+        } else if (wallpaperChoice != null) {
+            List<File> availableWallpapers = dir == null
+                    ? new ArrayList<>() : WallpaperRotation.images(new File(dir, "wallpapers"));
             if (availableWallpapers.isEmpty()) availableWallpapers = WallpaperPlayer.createFallbackWallpapers(ctx);
             File picked = WallpaperRotation.find(availableWallpapers, wallpaperChoice);
             if (picked == null && wallpaperChoice.equals(
