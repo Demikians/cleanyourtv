@@ -392,7 +392,7 @@ final class DemiPanel {
                 byte[] data = new byte[(int) file.length()];
                 int count = in.read(data);
                 String source = new String(data, 0, Math.max(0, count), StandardCharsets.UTF_8);
-                if (source.startsWith("\\uFEFF")) source = source.substring(1);
+                if (!source.isEmpty() && source.charAt(0) == 0xFEFF) source = source.substring(1);
                 return new JSONObject(source);
             }
         } catch (Exception ignored) {
