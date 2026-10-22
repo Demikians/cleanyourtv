@@ -29,7 +29,7 @@ import java.util.Locale;
 
 /** Low-cost native brand/prayer card. No WebView, network, artwork or animation loop. */
 final class DemiPanel {
-    private static final int GREEN = Color.rgb(75, 220, 165);
+    private static final int GREEN = Color.rgb(215, 181, 109);
     private int accentColor = GREEN;
     private View cardView;
     private View accentDivider;
@@ -98,7 +98,7 @@ final class DemiPanel {
         cardView = card;
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(14), dp(10), dp(14), dp(10));
-        card.setBackground(roundRect(0xE90A100E, 0x5536D99B, 18));
+        card.setBackground(roundRect(0xE90A100E, 0x55D7B56D, 18));
         card.setFocusable(false);
 
         LinearLayout header = new LinearLayout(context);
@@ -175,7 +175,7 @@ final class DemiPanel {
 
         View divider = new View(context);
         accentDivider = divider;
-        divider.setBackgroundColor(0x3336D99B);
+        divider.setBackgroundColor(0x33D7B56D);
         LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(-1, dp(1));
         dividerLp.topMargin = dp(7);
         dividerLp.bottomMargin = dp(6);
@@ -235,8 +235,8 @@ final class DemiPanel {
         }
         for (int i = 0; i < prayerCells.length; i++) {
             boolean selected = i == next;
-            prayerCells[i].setBackground(roundRect(selected ? 0x6633D69A : 0x251B2822,
-                    selected ? 0xAA36D99B : 0, 11));
+            prayerCells[i].setBackground(roundRect(selected ? ((accentColor & 0x00FFFFFF) | 0x33000000) : 0x251B2822,
+                    selected ? ((accentColor & 0x00FFFFFF) | 0x88000000) : 0, 11));
             prayerTimes[i].setTextColor(selected ? accentColor : Color.WHITE);
         }
         int target;
