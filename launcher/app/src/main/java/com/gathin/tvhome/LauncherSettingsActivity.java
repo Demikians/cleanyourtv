@@ -154,6 +154,8 @@ public final class LauncherSettingsActivity extends Activity {
         File dir = Config.dir(this);
         List<File> images = new java.util.ArrayList<>(WallpaperRotation.images(
                 dir == null ? null : new File(dir, "wallpapers")));
+        // If no external theme bundle is installed, expose the built-in low-memory landscape set here too.
+        if (images.isEmpty()) images.addAll(WallpaperPlayer.createFallbackWallpapers(this));
         // A theme with a single wallpaper.jpg offers that picture too (Config maps the choice back to it).
         File single = dir == null ? null : new File(dir, Config.WALLPAPER_NAME);
         if (single != null && single.isFile()) images.add(0, single);
