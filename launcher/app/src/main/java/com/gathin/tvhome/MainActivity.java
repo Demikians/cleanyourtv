@@ -2174,8 +2174,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private final Runnable clockCheck = this::updateClockVisibility;
 
     private void updateClockVisibility() {
+        // Keep the clock, date and compact dashboard visible even on TVs whose RTC has not synced yet.
+        // Some low-cost Android TVs boot with an old epoch and otherwise hide the entire header forever.
         boolean valid = System.currentTimeMillis() >= TIME_VALID_AFTER_MS;
-        clockBlock.setVisibility(valid ? View.VISIBLE : View.INVISIBLE);
+        clockBlock.setVisibility(View.VISIBLE);
         handler.removeCallbacks(clockCheck);
         if (valid) {
             updateGreeting();
