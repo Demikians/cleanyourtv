@@ -430,8 +430,9 @@ final class Config {
             wallpaper = null;
             wallpaperEnabled = false;
         } else if (wallpaperChoice != null && dir != null) {
-            File picked = WallpaperRotation.find(
-                    WallpaperRotation.images(new File(dir, "wallpapers")), wallpaperChoice);
+            List<File> availableWallpapers = WallpaperRotation.images(new File(dir, "wallpapers"));
+            if (availableWallpapers.isEmpty()) availableWallpapers = WallpaperPlayer.createFallbackWallpapers(ctx);
+            File picked = WallpaperRotation.find(availableWallpapers, wallpaperChoice);
             if (picked == null && wallpaperChoice.equals(
                     wallpaper != null ? wallpaper.getName() : "")) picked = wallpaper;
             if (picked != null) {
