@@ -97,7 +97,7 @@ final class DemiPanel {
         LinearLayout card = new LinearLayout(context);
         cardView = card;
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(18), dp(15), dp(18), dp(14));
+        card.setPadding(dp(14), dp(10), dp(14), dp(10));
         card.setBackground(roundRect(0xE90A100E, 0x5536D99B, 18));
         card.setFocusable(false);
 
@@ -123,17 +123,17 @@ final class DemiPanel {
 
         LinearLayout cells = new LinearLayout(context);
         cells.setOrientation(LinearLayout.HORIZONTAL);
-        cells.setPadding(0, dp(12), 0, dp(8));
+        cells.setPadding(0, dp(7), 0, dp(5));
         String[] names = {"SUBUH", "DZUHUR", "ASHAR", "MAGHRIB", "ISYA"};
         for (int i = 0; i < names.length; i++) {
             LinearLayout cell = new LinearLayout(context);
             cell.setOrientation(LinearLayout.VERTICAL);
             cell.setGravity(Gravity.CENTER);
-            cell.setPadding(dp(3), dp(9), dp(3), dp(9));
+            cell.setPadding(dp(3), dp(6), dp(3), dp(6));
             cell.setBackground(roundRect(0x251B2822, 0, 11));
             TextView name = text(names[i], 9, MUTED, Typeface.BOLD);
             name.setGravity(Gravity.CENTER);
-            TextView time = text("--:--", 17, Color.WHITE, Typeface.NORMAL);
+            TextView time = text("--:--", 15, Color.WHITE, Typeface.NORMAL);
             time.setGravity(Gravity.CENTER);
             cell.addView(name, wrap());
             LinearLayout.LayoutParams timeLp = wrap();
@@ -149,7 +149,7 @@ final class DemiPanel {
 
         LinearLayout nextRow = new LinearLayout(context);
         nextRow.setGravity(Gravity.CENTER_VERTICAL);
-        nextRow.setPadding(0, dp(7), 0, 0);
+        nextRow.setPadding(0, dp(4), 0, 0);
         TextView nextLabel = accentText("SHOLAT BERIKUTNYA", 9, Typeface.BOLD);
         nextLabel.setLetterSpacing(0.12f);
         nextRow.addView(nextLabel, wrap());
@@ -162,7 +162,7 @@ final class DemiPanel {
 
         LinearLayout imsakRow = new LinearLayout(context);
         imsakRow.setGravity(Gravity.CENTER_VERTICAL);
-        imsakRow.setPadding(0, dp(6), 0, 0);
+        imsakRow.setPadding(0, dp(4), 0, 0);
         imsakLabel = accentText("IMSAK", 9, Typeface.BOLD);
         imsakLabel.setLetterSpacing(0.12f);
         imsakRow.addView(imsakLabel, wrap());
@@ -177,11 +177,11 @@ final class DemiPanel {
         accentDivider = divider;
         divider.setBackgroundColor(0x3336D99B);
         LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(-1, dp(1));
-        dividerLp.topMargin = dp(11);
-        dividerLp.bottomMargin = dp(9);
+        dividerLp.topMargin = dp(7);
+        dividerLp.bottomMargin = dp(6);
         card.addView(divider, dividerLp);
 
-        quoteView = text("", 14, Color.rgb(238, 245, 241), Typeface.NORMAL);
+        quoteView = text("", 12, Color.rgb(238, 245, 241), Typeface.NORMAL);
         quoteView.setMaxLines(2);
         quoteView.setLineSpacing(dp(2), 1.0f);
         card.addView(quoteView, wrap());
@@ -190,10 +190,10 @@ final class DemiPanel {
         card.addView(quoteSource, wrap());
 
         if (enabled) {
-            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(610), ViewGroup.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(520), ViewGroup.LayoutParams.WRAP_CONTENT,
                     Gravity.TOP | Gravity.LEFT);
             lp.leftMargin = dp(56);
-            lp.topMargin = dp(158);
+            lp.topMargin = dp(142);
             root.addView(card, lp);
         } else {
             card.setVisibility(View.GONE);
