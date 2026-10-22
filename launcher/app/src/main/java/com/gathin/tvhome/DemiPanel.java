@@ -381,14 +381,19 @@ final class DemiPanel {
     }
 
     private static JSONObject readThemeConfig(Context context) {
+        File external = null;
         try {
             File dir = Config.dir(context);
-            File file = dir == null ? null : new File(dir, Config.FILE_NAME);
-            if (file == null || !file.isFile() || file.length() > 64 * 1024) return new JSONObject();
+            external = dir == null ? null : new File(dir, Config.FILE_NAME);
+            File file = external != null && external.isFile()
+                    ? external : new File(context.getFilesDir(), Config.FILE_NAME);
+            if (!file.isFile() || file.length() > 64 * 1024) return new JSONObject();
             try (FileInputStream in = new FileInputStream(file)) {
                 byte[] data = new byte[(int) file.length()];
                 int count = in.read(data);
-                return new JSONObject(new String(data, 0, Math.max(0, count), StandardCharsets.UTF_8));
+                String source = new String(data, 0, Math.max(0, count), StandardCharsets.UTF_8);
+                if (source.startsWith("\\uFEFF")) source = source.substring(1);
+                return new JSONObject(source);
             }
         } catch (Exception ignored) {
             return new JSONObject();
