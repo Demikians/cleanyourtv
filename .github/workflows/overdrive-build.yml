@@ -1,0 +1,40 @@
+name: Overdrive Android build
+
+on:
+  push:
+    branches: [demikians-overdrive]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Test and build Demi Kianz × Nero APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests, lint and release APK
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease
+      - name: Check APK size for low-memory TVs
+        run: |
+          size=$(stat -c %s launcher/app/build/outputs/apk/release/app-release.apk)
+          echo "Release APK: $((size / 1024)) KB"
+          test "$size" -lt 491520 || { echo "APK exceeds 480 KB; keep the launcher lean for 1 GB TVs"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demi-kianz-nero-overdrive-apk
+          path: launcher/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
