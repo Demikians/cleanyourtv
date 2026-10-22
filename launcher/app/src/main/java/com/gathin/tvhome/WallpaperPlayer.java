@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +58,9 @@ final class WallpaperPlayer {
         this.paletteListener = paletteListener;
         this.root = root;
         files = new ArrayList<>(config.wallpapers);
+        // The theme's photo collection is optional. A clean install still gets a set of locally
+        // generated, low-memory landscape wallpapers instead of a blank black screen.
+        if (files.isEmpty() && config.wallpaperEnabled) files.addAll(createFallbackWallpapers(context));
         interval = config.wallpaperRotationMinutes * 60_000L;
         bitmapConfig = config.wallpaperTrueColor ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565;
         // The dim is painted into the picture (decode), so no full-screen shade layer is drawn on every frame.
@@ -227,6 +231,89 @@ final class WallpaperPlayer {
         current = bitmap;
         image.setImageBitmap(bitmap);
         if (old != null && old != bitmap) image.postDelayed(old::recycle, 500);
+    }
+
+    /**
+     * Twelve small, locally generated landscape scenes. They are written once to cache, so no image
+     * assets inflate the APK and the 1 GB TV does not keep twelve decoded bitmaps in memory.
+     */
+    private static List<File> createFallbackWallpapers(Context context) {
+        final int[][] palette = {
+                {0xFF101B35, 0xFF526B8C, 0xFFF0B779, 0xFF1D3342, 0xFF263F4B},
+                {0xFF10283A, 0xFF4E8795, 0xFFFFD39A, 0xFF24535A, 0xFF12343C},
+                {0xFF080F28, 0xFF293F66, 0xFFB5C8D8, 0xFF1D2A45, 0xFF111D31},
+                {0xFF061B2B, 0xFF235D6C, 0xFF65D7B4, 0xFF123B4C, 0xFF0A2938},
+                {0xFF2B1838, 0xFF9C5D70, 0xFFFFC58A, 0xFF53364B, 0xFF2C3142},
+                {0xFF14263F, 0xFF7D9DAF, 0xFFE6E0CB, 0xFF344B61, 0xFF1A3444},
+                {0xFF091D2C, 0xFF4F7C82, 0xFFF1CDA0, 0xFF24545A, 0xFF12363F},
+                {0xFF0A2B35, 0xFF568B79, 0xFFE8C68C, 0xFF285847, 0xFF173E38},
+                {0xFF201B35, 0xFF78627C, 0xFFFFC18A, 0xFF43364D, 0xFF252B3B},
+                {0xFF091B32, 0xFF2B5378, 0xFF91D0D3, 0xFF17415B, 0xFF0D2B43},
+                {0xFF13263B, 0xFF65869A, 0xFFF4D6A5, 0xFF345364, 0xFF1C3849},
+                {0xFF101C2A, 0xFF4B6B70, 0xFFD9B58B, 0xFF28484B, 0xFF152F37}
+        };
+        final String[] names = {"01-dusk-peaks", "02-golden-coast", "03-moon-lake", "04-aurora",
+                "05-dunes", "06-above-the-clouds", "07-mirror-lake", "08-tea-hills",
+                "09-alpenglow", "10-deep-blue", "11-morning-ridge", "12-monsoon"};
+        final float[][] ridges = {
+                {190, 90, 150, 72, 180}, {165, 130, 68, 150, 115}, {130, 70, 155, 95, 170},
+                {180, 115, 60, 135, 85}, {145, 65, 125, 175, 100}, {175, 85, 135, 72, 155},
+                {155, 105, 170, 65, 140}, {185, 145, 70, 120, 95}, {155, 78, 130, 90, 165},
+                {180, 110, 65, 150, 95}, {150, 80, 155, 70, 145}, {170, 95, 145, 75, 160}
+        };
+        File dir = new File(context.getCacheDir(), "demi-landscape-wallpapers");
+        if (!dir.exists() && !dir.mkdirs()) return Collections.emptyList();
+        List<File> result = new ArrayList<>();
+        for (int i = 0; i < palette.length; i++) {
+            File file = new File(dir, names[i] + ".jpg");
+            if (!file.isFile() || file.length() == 0) {
+                Bitmap bitmap = Bitmap.createBitmap(480, 270, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                paint.setShader(new LinearGradient(0, 0, 0, 270,
+                        new int[]{palette[i][0], palette[i][1], palette[i][2]},
+                        new float[]{0f, 0.68f, 1f}, android.graphics.Shader.TileMode.CLAMP));
+                canvas.drawRect(0, 0, 480, 270, paint);
+                paint.setShader(null);
+                paint.setColor(palette[i][2]);
+                paint.setAlpha(165);
+                float sunX = 105 + (i * 67 % 280);
+                float sunY = 66 + (i * 17 % 50);
+                canvas.drawCircle(sunX, sunY, i % 3 == 0 ? 25 : 17, paint);
+                paint.setAlpha(36);
+                canvas.drawCircle(sunX, sunY, 38, paint);
+                drawRidge(canvas, palette[i][3], ridges[i], 0.0f);
+                float[] front = ridges[i].clone();
+                for (int j = 0; j < front.length; j++) front[j] = Math.min(235, front[j] + 45 + (j % 2) * 18);
+                drawRidge(canvas, palette[i][4], front, 0.0f);
+                // A dark foreground band gives the translucent app dock enough contrast.
+                paint.setColor(0x55101A20);
+                paint.setAlpha(95);
+                canvas.drawRect(0, 242, 480, 270, paint);
+                try (FileOutputStream out = new FileOutputStream(file)) {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 82, out);
+                    out.flush();
+                } catch (Exception failure) {
+                    file.delete();
+                } finally {
+                    bitmap.recycle();
+                }
+            }
+            if (file.isFile() && file.length() > 0) result.add(file);
+        }
+        return result;
+    }
+
+    private static void drawRidge(Canvas canvas, int color, float[] peaks, float ignored) {
+        android.graphics.Path path = new android.graphics.Path();
+        path.moveTo(0, 270);
+        path.lineTo(0, peaks[0]);
+        for (int i = 1; i < peaks.length; i++) path.lineTo(i * 120, peaks[i]);
+        path.lineTo(480, 270);
+        path.close();
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(color);
+        canvas.drawPath(path, paint);
     }
 
     private Bitmap decode(File file) {
