@@ -30,6 +30,10 @@ import java.util.Locale;
 /** Low-cost native brand/prayer card. No WebView, network, artwork or animation loop. */
 final class DemiPanel {
     private static final int GREEN = Color.rgb(75, 220, 165);
+    private int accentColor = GREEN;
+    private View cardView;
+    private View accentDivider;
+    private final java.util.List<TextView> accentTextViews = new java.util.ArrayList<>();
     private static final int MUTED = Color.rgb(164, 184, 176);
     private static final String PREFS = "demi_prayer_settings";
     private static final String[][] VERSES = {
@@ -91,6 +95,7 @@ final class DemiPanel {
         imsakOffset = prefs.getInt("imsak_offset", defaultImsakOffset);
 
         LinearLayout card = new LinearLayout(context);
+        cardView = card;
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(18), dp(15), dp(18), dp(14));
         card.setBackground(roundRect(0xE90A100E, 0x5536D99B, 18));
@@ -98,7 +103,7 @@ final class DemiPanel {
 
         LinearLayout header = new LinearLayout(context);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView accent = text("▎", 17, GREEN, Typeface.BOLD);
+        TextView accent = accentText("▎", 17, Typeface.BOLD);
         accent.setPadding(0, 0, dp(7), 0);
         header.addView(accent, wrap());
         TextView title = text("PRAYER TIMES", 12, Color.WHITE, Typeface.BOLD);
@@ -108,7 +113,7 @@ final class DemiPanel {
         locationView.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         locationView.setMaxWidth(dp(220));
         header.addView(locationView, wrap());
-        TextView setup = text("  ⚙", 14, GREEN, Typeface.BOLD);
+        TextView setup = accentText("  ⚙", 14, Typeface.BOLD);
         setup.setFocusable(true);
         setup.setClickable(true);
         setup.setPadding(dp(8), dp(4), 0, dp(4));
@@ -145,7 +150,7 @@ final class DemiPanel {
         LinearLayout nextRow = new LinearLayout(context);
         nextRow.setGravity(Gravity.CENTER_VERTICAL);
         nextRow.setPadding(0, dp(7), 0, 0);
-        TextView nextLabel = text("SHOLAT BERIKUTNYA", 9, GREEN, Typeface.BOLD);
+        TextView nextLabel = accentText("SHOLAT BERIKUTNYA", 9, Typeface.BOLD);
         nextLabel.setLetterSpacing(0.12f);
         nextRow.addView(nextLabel, wrap());
         countdownView = text("", 11, Color.WHITE, Typeface.BOLD);
@@ -158,7 +163,7 @@ final class DemiPanel {
         LinearLayout imsakRow = new LinearLayout(context);
         imsakRow.setGravity(Gravity.CENTER_VERTICAL);
         imsakRow.setPadding(0, dp(6), 0, 0);
-        imsakLabel = text("IMSAK", 9, GREEN, Typeface.BOLD);
+        imsakLabel = accentText("IMSAK", 9, Typeface.BOLD);
         imsakLabel.setLetterSpacing(0.12f);
         imsakRow.addView(imsakLabel, wrap());
         imsakView = text("", 11, Color.WHITE, Typeface.BOLD);
@@ -169,6 +174,7 @@ final class DemiPanel {
         card.addView(imsakRow, wrap());
 
         View divider = new View(context);
+        accentDivider = divider;
         divider.setBackgroundColor(0x3336D99B);
         LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(-1, dp(1));
         dividerLp.topMargin = dp(11);
@@ -179,7 +185,7 @@ final class DemiPanel {
         quoteView.setMaxLines(2);
         quoteView.setLineSpacing(dp(2), 1.0f);
         card.addView(quoteView, wrap());
-        quoteSource = text("", 10, GREEN, Typeface.BOLD);
+        quoteSource = accentText("", 10, Typeface.BOLD);
         quoteSource.setPadding(0, dp(5), 0, 0);
         card.addView(quoteSource, wrap());
 
@@ -199,6 +205,20 @@ final class DemiPanel {
     String brandTagline() { return brandTagline; }
     boolean hasBrand() { return !brandTitle.trim().isEmpty(); }
 
+    private TextView accentText(String value, float size, int style) {
+        TextView view = text(value, size, accentColor, style);
+        accentTextViews.add(view);
+        return view;
+    }
+
+    /** Wallpaper accent changes are applied only when a new wallpaper is decoded. */
+    void setAccent(int color) {
+        if (color == 0) return;
+        accentColor = color;
+        for (TextView view : accentTextViews) view.setTextColor(color);
+        if (cardView != null) cardView.setBackground(roundRect(0xB8182220, (color & 0x00FFFFFF) | 0x55000000, 18));
+        if (accentDivider != null) accentDivider.setBackgroundColor((color & 0x00FFFFFF) | 0x33000000);
+    }
     void update() {
         if (!enabled) return;
         locationView.setText(location);
