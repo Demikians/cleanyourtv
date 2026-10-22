@@ -239,7 +239,7 @@ final class WallpaperPlayer {
      * Twelve small, locally generated landscape scenes. They are written once to cache, so no image
      * assets inflate the APK and the 1 GB TV does not keep twelve decoded bitmaps in memory.
      */
-    private static List<File> createFallbackWallpapers(Context context) {
+    static List<File> createFallbackWallpapers(Context context) {
         final int[][] palette = {
                 {0xFF101B35, 0xFF526B8C, 0xFFF0B779, 0xFF1D3342, 0xFF263F4B},
                 {0xFF10283A, 0xFF4E8795, 0xFFFFD39A, 0xFF24535A, 0xFF12343C},
