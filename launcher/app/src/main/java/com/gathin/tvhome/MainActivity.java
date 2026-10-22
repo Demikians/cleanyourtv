@@ -381,7 +381,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // black under it is a second full-screen fill on every frame for nothing. The starting window still uses
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
-        wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = color; if (glass != null) glass.setAccent(color); }));
+        wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = color; if (glass != null) glass.setAccent(color); if (demiPanel != null) demiPanel.setAccent(color); }));
         brandTagline = findViewById(R.id.brandTagline);
         demiPanel = new DemiPanel(this, root);
         sky = findViewById(R.id.sky);
