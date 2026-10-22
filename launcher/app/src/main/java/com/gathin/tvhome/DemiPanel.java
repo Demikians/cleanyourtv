@@ -73,9 +73,9 @@ final class DemiPanel {
         this.context = context;
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         JSONObject json = readThemeConfig(context);
-        brandTitle = string(json, "brand_title", "");
-        brandTagline = string(json, "brand_tagline", "");
-        enabled = bool(json, "show_prayer_panel", false);
+        brandTitle = string(json, "brand_title", "DEMI KIANZ × NERO");
+        brandTagline = string(json, "brand_tagline", "STAY IN YOUR ZONE · LIVE IN BALANCE");
+        enabled = bool(json, "show_prayer_panel", true);
         defaultLatitude = number(json, "prayer_latitude", -6.9);
         defaultLongitude = number(json, "prayer_longitude", 107.1);
         defaultMethod = string(json, "prayer_method", "kemenag");
