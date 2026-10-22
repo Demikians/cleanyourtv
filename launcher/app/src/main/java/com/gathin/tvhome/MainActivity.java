@@ -130,7 +130,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
     private GlassView glass;
-    private int adaptiveAccentColor = 0xFF4BDCA5;
+    private int adaptiveAccentColor = 0xFFD7B56D;
     private View ambient;
     private TextView heroName;
     /** The top shelf: heroName, plus the cinematic shelf's "Last opened" line and dock position dots. */
@@ -2221,7 +2221,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (demiPanel != null && demiPanel.hasBrand()) {
             greeting.setText(demiPanel.brandTitle());
-            greeting.setTextColor(0xFF4BDCA5);
+            greeting.setTextColor(0xFFD7B56D);
             greeting.setTextSize(13f);
             if (brandTagline != null) {
                 brandTagline.setText(demiPanel.brandTagline());
