@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.IntConsumer;
 
 /** Displays and rotates a theme's local wallpaper images while Home is visible. */
 final class WallpaperPlayer {
@@ -50,8 +51,10 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
+    private final IntConsumer paletteListener;
 
-    WallpaperPlayer(Context context, FrameLayout root, Config config) {
+    WallpaperPlayer(Context context, FrameLayout root, Config config, IntConsumer paletteListener) {
+        this.paletteListener = paletteListener;
         this.root = root;
         files = new ArrayList<>(config.wallpapers);
         interval = config.wallpaperRotationMinutes * 60_000L;
@@ -247,6 +250,7 @@ final class WallpaperPlayer {
             options.inMutable = dimColor != 0;
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
+            if (paletteListener != null) { int accent = AdaptivePalette.accent(decoded); root.post(() -> paletteListener.accept(accent)); }
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.

@@ -130,6 +130,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
     private GlassView glass;
+    private int adaptiveAccentColor = 0xFF4BDCA5;
     private View ambient;
     private TextView heroName;
     /** The top shelf: heroName, plus the cinematic shelf's "Last opened" line and dock position dots. */
@@ -380,13 +381,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // black under it is a second full-screen fill on every frame for nothing. The starting window still uses
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
-        wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
+        wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = color; if (glass != null) glass.setAccent(color); }));
         brandTagline = findViewById(R.id.brandTagline);
         demiPanel = new DemiPanel(this, root);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
-        if (festive) glass.setAccent(festival.accentColor());
+        glass.setAccent(festive ? festival.accentColor() : adaptiveAccentColor);
         ambient = findViewById(R.id.ambient);
         // The glow is one bitmap, so its alpha can be applied while drawing it. Otherwise every frame of
         // a fade renders it into a full-screen offscreen buffer first.
