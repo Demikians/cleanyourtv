@@ -2082,6 +2082,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private void focusLibrary() {
         cancelPendingFocusScroll();
+        if (btnLibraryTop != null && btnLibraryTop.getVisibility() == View.VISIBLE) {
+            libraryFocusPending = false;
+            btnLibraryTop.requestFocus();
+            return;
+        }
         int position = adapter.appCount();
         if (!adapter.isLibraryAt(position)) return;
         RecyclerView.ViewHolder holder = grid.findViewHolderForAdapterPosition(position);
