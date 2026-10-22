@@ -14,7 +14,13 @@ A low-memory, cinematic CleanYourTV theme preset for TVs with about 1 GB RAM.
 
 The dock lists YouTube, Netflix, Prime Video and Disney+. Missing apps are skipped automatically.
 
-## Apply
+## Build and install without a PC
+
+The branch includes a GitHub Actions workflow that runs the launcher unit tests, lint, release build, and APK-size check. When the run succeeds, open the [Overdrive build workflow](https://github.com/Demikians/cleanyourtv/actions/workflows/overdrive-build.yml), open the latest successful run, and download the `demi-kianz-nero-overdrive-apk` artifact. Extract the ZIP to get `app-release.apk`.
+
+You can copy that APK to a USB drive and install it from the TV's file manager, if the TV permits installation from that source. The branch's built-in defaults include the Demi Kianz × Nero branding, prayer card, emerald-black layout, compact system stats, and reduced motion, so the basic experience does not depend on pushing the theme JSON separately. The TV still needs to allow the app to be selected as its Home launcher.
+
+## Apply theme configuration
 
 From a computer with this repository and ADB configured, run:
 
