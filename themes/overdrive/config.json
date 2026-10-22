@@ -23,5 +23,14 @@
   "always_show_names": false,
   "app_library": true,
   "show_network_pill": true,
-  "show_inputs_pill": true
+  "show_inputs_pill": true,
+  "brand_title": "DEMI KIANZ × NERO",
+  "brand_tagline": "STAY IN YOUR ZONE · LIVE IN BALANCE",
+  "show_prayer_panel": true,
+  "prayer_latitude": -6.9,
+  "prayer_longitude": 107.1,
+  "prayer_method": "kemenag",
+  "prayer_location_label": "JAWA BARAT · WIB",
+  "ramadan_mode": "auto",
+  "imsak_offset_minutes": 10
 }
