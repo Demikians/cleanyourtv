@@ -282,10 +282,10 @@ final class WallpaperPlayer {
                 canvas.drawCircle(sunX, sunY, i % 3 == 0 ? 25 : 17, paint);
                 paint.setAlpha(36);
                 canvas.drawCircle(sunX, sunY, 38, paint);
-                drawRidge(canvas, palette[i][3], ridges[i], 0.0f);
+                drawRidge(canvas, palette[i][3], ridges[i]);
                 float[] front = ridges[i].clone();
                 for (int j = 0; j < front.length; j++) front[j] = Math.min(235, front[j] + 45 + (j % 2) * 18);
-                drawRidge(canvas, palette[i][4], front, 0.0f);
+                drawRidge(canvas, palette[i][4], front);
                 // A dark foreground band gives the translucent app dock enough contrast.
                 paint.setColor(0x55101A20);
                 paint.setAlpha(95);
@@ -304,7 +304,7 @@ final class WallpaperPlayer {
         return result;
     }
 
-    private static void drawRidge(Canvas canvas, int color, float[] peaks, float ignored) {
+    private static void drawRidge(Canvas canvas, int color, float[] peaks) {
         android.graphics.Path path = new android.graphics.Path();
         path.moveTo(0, 270);
         path.lineTo(0, peaks[0]);
