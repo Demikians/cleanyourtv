@@ -237,7 +237,7 @@ final class DemiPanel {
             boolean selected = i == next;
             prayerCells[i].setBackground(roundRect(selected ? 0x6633D69A : 0x251B2822,
                     selected ? 0xAA36D99B : 0, 11));
-            prayerTimes[i].setTextColor(selected ? GREEN : Color.WHITE);
+            prayerTimes[i].setTextColor(selected ? accentColor : Color.WHITE);
         }
         int target;
         String nextName;
