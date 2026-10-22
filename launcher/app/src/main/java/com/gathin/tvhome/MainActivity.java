@@ -159,6 +159,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean animations;
     private boolean advancedEffects;
     private TextView greeting;
+    private TextView brandTagline;
+    private DemiPanel demiPanel;
     private View clockBlock;
     private View btnInputs;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
@@ -328,6 +330,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updateRace();
+            if (demiPanel != null) demiPanel.update();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -378,6 +381,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg);
+        brandTagline = findViewById(R.id.brandTagline);
+        demiPanel = new DemiPanel(this, root);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
@@ -809,6 +814,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (openLiveTvAfterBoot()) return;
         updateGreeting();
         updateRace();
+        if (demiPanel != null) demiPanel.update();
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
         // when the network or the inputs change, so this refresh only catches anything missed. Its binder calls
         // (about 7 ms on a TCL C755, most of it WifiManager.getConnectionInfo) would hold up the first frame back
@@ -2204,6 +2210,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             greeting.setText(greetingName.isEmpty() ? getString(res)
                     : getString(R.string.greeting_with_name, getString(res), greetingName));
             greeting.setTextColor(greetingColor);
+        }
+        if (demiPanel != null && demiPanel.hasBrand()) {
+            greeting.setText(demiPanel.brandTitle());
+            greeting.setTextColor(0xFF4BDCA5);
+            greeting.setTextSize(13f);
+            if (brandTagline != null) {
+                brandTagline.setText(demiPanel.brandTagline());
+                brandTagline.setVisibility(demiPanel.brandTagline().isEmpty() ? View.GONE : View.VISIBLE);
+            }
+        } else if (brandTagline != null) {
+            brandTagline.setVisibility(View.GONE);
         }
         if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));
     }
