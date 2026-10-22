@@ -28,7 +28,7 @@ On Windows:
 powershell -ExecutionPolicy Bypass -File tools\theme.ps1 -TvHost <TV-IP> themes\overdrive
 ```
 
-This is a theme preset only. It does not install an APK, disable packages, or change the TV's default launcher. The clock and system stats are native launcher features. Prayer times are not included in this preset because the launcher currently has no built-in prayer-time data source or prayer-time module.
+This is a theme preset for the launcher build in this branch. It does not disable packages or change the TV's default launcher by itself; install the matching APK first, then push this theme.
 
 
 ## Demi Kianz × Nero home
