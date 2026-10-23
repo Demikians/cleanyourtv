@@ -1,9 +1,7 @@
 name: Overdrive Android build
 
 on:
-  # Temporary push trigger for the user's approved release build; restore manual-only after completion.
-  push:
-    branches: [demikians-overdrive]
+  # Manual only: do not produce a new APK until the user explicitly approves FIX JADI.
   workflow_dispatch:
 
 permissions:
