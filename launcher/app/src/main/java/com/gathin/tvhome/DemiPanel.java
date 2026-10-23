@@ -2,7 +2,11 @@ package com.gathin.tvhome;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.Manifest;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -17,35 +21,42 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoField;
 import java.util.Locale;
 
 /** Low-cost native brand/prayer card. No WebView, network, artwork or animation loop. */
 final class DemiPanel {
-    private static final int GREEN = Color.rgb(215, 181, 109);
+    private static final int GREEN = Color.rgb(143, 191, 159);
     private int accentColor = GREEN;
     private View cardView;
     private View accentDivider;
     private final java.util.List<TextView> accentTextViews = new java.util.ArrayList<>();
     private static final int MUTED = Color.rgb(164, 184, 176);
     private static final String PREFS = "demi_prayer_settings";
-    private static final String[][] VERSES = {
-        {"Sesungguhnya bersama kesulitan ada kemudahan.", "QS. Al-Insyirah 94:5–6"},
-        {"Allah tidak membebani seseorang melainkan sesuai kesanggupannya.", "QS. Al-Baqarah 2:286"},
-        {"Ingatlah, hanya dengan mengingat Allah hati menjadi tenteram.", "QS. Ar-Ra'd 13:28"},
-        {"Sesungguhnya Allah beserta orang-orang yang sabar.", "QS. Al-Baqarah 2:153"},
-        {"Janganlah kamu berputus asa dari rahmat Allah.", "QS. Az-Zumar 39:53"},
-        {"Barang siapa bertawakal kepada Allah, niscaya Allah akan mencukupkan keperluannya.", "QS. At-Talaq 65:3"},
-        {"Maka ingatlah kepada-Ku, Aku pun akan ingat kepadamu.", "QS. Al-Baqarah 2:152"},
-        {"Dan Dia bersama kamu di mana saja kamu berada.", "QS. Al-Hadid 57:4"}
+    // References are fixed; Arabic text and translation are fetched from MyQuran API v3.
+    private static final int[][] VERSE_REFS = {
+        {94, 5}, {2, 286}, {13, 28}, {2, 153},
+        {39, 53}, {65, 3}, {2, 152}, {57, 4}
     };
+    private static final long RETRY_AFTER_MS = 15L * 60L * 1000L;
+    private static final String PRAYER_CACHE_LAST = "prayer_cache_last";
+    private static final String QURAN_CACHE = "quran_cache";
 
     private final Context context;
     private final SharedPreferences prefs;
@@ -63,6 +74,7 @@ final class DemiPanel {
     private final View[] prayerCells = new View[5];
     private final TextView imsakView;
     private final TextView countdownView;
+    private final TextView arabicVerseView;
     private final TextView quoteView;
     private final TextView quoteSource;
     private final TextView imsakLabel;
@@ -72,6 +84,19 @@ final class DemiPanel {
     private String location;
     private String ramadanMode;
     private int imsakOffset;
+    private volatile int[] apiPrayerMinutes;
+    private volatile String apiPrayerDate = "";
+    private volatile boolean apiPrayerFromCache = true;
+    private volatile boolean apiPrayerOffline = true;
+    private volatile int tomorrowMaghrib = -1;
+    private volatile String tomorrowPrayerDate = "";
+    private volatile String verseArabic = "";
+    private volatile String verseTranslation = "";
+    private volatile String verseReference = "";
+    private volatile String verseDate = "";
+    private volatile boolean verseFromCache = true;
+    private volatile long lastRefreshAttempt;
+    private volatile boolean refreshInFlight;
 
     DemiPanel(Context context, FrameLayout root) {
         this.context = context;
@@ -89,16 +114,18 @@ final class DemiPanel {
 
         latitude = prefs.getFloat("latitude", (float) defaultLatitude);
         longitude = prefs.getFloat("longitude", (float) defaultLongitude);
-        method = prefs.getString("method", defaultMethod);
+        method = "kemenag"; // Use the user-approved Aladhan method 20.
         location = prefs.getString("location", defaultLocation);
         ramadanMode = prefs.getString("ramadan_mode", defaultRamadan);
         imsakOffset = prefs.getInt("imsak_offset", defaultImsakOffset);
+        applyLastKnownLocationIfAllowed();
+        loadCachedData();
 
         LinearLayout card = new LinearLayout(context);
         cardView = card;
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(14), dp(10), dp(14), dp(10));
-        card.setBackground(roundRect(0xE90A100E, 0x55D7B56D, 18));
+        card.setBackground(roundRect(0xE90A100E, 0x558FBF9F, 18));
         card.setFocusable(false);
 
         LinearLayout header = new LinearLayout(context);
@@ -150,7 +177,7 @@ final class DemiPanel {
         LinearLayout nextRow = new LinearLayout(context);
         nextRow.setGravity(Gravity.CENTER_VERTICAL);
         nextRow.setPadding(0, dp(4), 0, 0);
-        TextView nextLabel = accentText("SHOLAT BERIKUTNYA", 9, Typeface.BOLD);
+        TextView nextLabel = accentText("MENUJU MAGHRIB", 9, Typeface.BOLD);
         nextLabel.setLetterSpacing(0.12f);
         nextRow.addView(nextLabel, wrap());
         countdownView = text("", 11, Color.WHITE, Typeface.BOLD);
@@ -175,18 +202,32 @@ final class DemiPanel {
 
         View divider = new View(context);
         accentDivider = divider;
-        divider.setBackgroundColor(0x33D7B56D);
+        divider.setBackgroundColor(0x338FBF9F);
         LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(-1, dp(1));
         dividerLp.topMargin = dp(7);
         dividerLp.bottomMargin = dp(6);
         card.addView(divider, dividerLp);
 
-        quoteView = text("", 12, Color.rgb(238, 245, 241), Typeface.NORMAL);
-        quoteView.setMaxLines(2);
+        TextView verseHeading = accentText("AYAT HARIAN", 9, Typeface.BOLD);
+        verseHeading.setLetterSpacing(0.14f);
+        LinearLayout.LayoutParams verseHeadingLp = wrap();
+        verseHeadingLp.bottomMargin = dp(5);
+        card.addView(verseHeading, verseHeadingLp);
+        arabicVerseView = text("", 18, Color.WHITE, Typeface.NORMAL);
+        arabicVerseView.setGravity(Gravity.RIGHT);
+        arabicVerseView.setTextDirection(View.TEXT_DIRECTION_RTL);
+        arabicVerseView.setMaxLines(2);
+        arabicVerseView.setLineSpacing(dp(3), 1.0f);
+        LinearLayout.LayoutParams arabicLp = wrap();
+        arabicLp.bottomMargin = dp(5);
+        card.addView(arabicVerseView, arabicLp);
+        quoteView = text("Ayat harian menunggu koneksi data.", 12, Color.rgb(238, 245, 241), Typeface.NORMAL);
+        quoteView.setMaxLines(3);
         quoteView.setLineSpacing(dp(2), 1.0f);
         card.addView(quoteView, wrap());
-        quoteSource = accentText("", 10, Typeface.BOLD);
+        quoteSource = accentText("SUMBER: MYQURAN API V3", 9, Typeface.BOLD);
         quoteSource.setPadding(0, dp(5), 0, 0);
+        quoteSource.setMaxLines(2);
         card.addView(quoteSource, wrap());
 
         if (enabled) {
@@ -202,6 +243,7 @@ final class DemiPanel {
             card.setVisibility(View.GONE);
         }
         update();
+        refreshOnlineData(true);
     }
 
     String brandTitle() { return brandTitle; }
