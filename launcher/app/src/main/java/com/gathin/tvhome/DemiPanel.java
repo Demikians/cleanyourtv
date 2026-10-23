@@ -427,7 +427,7 @@ final class DemiPanel {
 
     private int[] fetchPrayerMinutes(LocalDate date, double lat, double lon) throws Exception {
         String day = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.ROOT));
-        String zone = java.net.URLEncoder.encode(java.time.ZoneId.systemDefault().getId(), StandardCharsets.UTF_8);
+        String zone = java.net.URLEncoder.encode(java.time.ZoneId.systemDefault().getId(), "UTF-8");
         String url = "https://api.aladhan.com/v1/timings/" + day
                 + "?latitude=" + String.format(Locale.ROOT, "%.6f", lat)
                 + "&longitude=" + String.format(Locale.ROOT, "%.6f", lon)
