@@ -215,7 +215,30 @@
                         android:fontFamily="@string/font_regular"
                         android:letterSpacing="0.14"
                         android:textAllCaps="true" />
-                </LinearLayout>
+                
+
+                    <!-- Compact local calendar, kept in sync with the default Home resource. -->
+                    <TextView
+                                                android:id="@+id/miniCalendarTitle"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:layout_marginTop="7dp"
+                                                android:textColor="#FF8FBF9F"
+                                                android:textSize="11sp"
+                                                android:fontFamily="@string/font_medium"
+                                                android:letterSpacing="0.08"
+                                                android:focusable="false"
+                                                android:importantForAccessibility="no" />
+
+                    <GridLayout
+                                                android:id="@+id/miniCalendarGrid"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:columnCount="7"
+                                                android:rowCount="7"
+                                                android:focusable="false"
+                                                android:importantForAccessibility="no" />
+</LinearLayout>
 
                 <View
                     android:layout_width="1dp"
@@ -242,6 +265,21 @@
                         android:fontFamily="@string/font_medium"
                         android:letterSpacing="0.22"
                         android:textAllCaps="true" />
+
+                    <TextView
+                                        android:id="@+id/brandTagline"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="4dp"
+                                        android:layout_marginTop="2dp"
+                                        android:singleLine="true"
+                                        android:ellipsize="end"
+                                        android:textColor="#FF8FBF9F"
+                                        android:text="CleanYourTV · Forest Edition"
+                                        android:textSize="10sp"
+                                        android:fontFamily="@string/font_medium"
+                                        android:letterSpacing="0.16"
+                                        android:visibility="gone" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
