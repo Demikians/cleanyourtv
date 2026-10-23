@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -13,11 +14,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
 
 /** Remote-friendly settings owned by the launcher; system settings stay one row away. */
 public final class LauncherSettingsActivity extends Activity {
     static final String EXTRA_REORDER = "com.gathin.tvhome.extra.REORDER_FROM_SETTINGS";
+    private static final int REQUEST_CUSTOM_WALLPAPER = 7401;
     private SharedPreferences choices;
     private final TextView[] columnChoices = new TextView[4];
     private final TextView[] rowChoices = new TextView[4];
@@ -184,8 +188,69 @@ public final class LauncherSettingsActivity extends Activity {
                     setResult(RESULT_OK);
                     refresh();
                 })
+                .setPositiveButton("Pilih dari TV", (dialog, which) -> openCustomWallpaperPicker())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
+    }
+
+    private void openCustomWallpaperPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        try {
+            startActivityForResult(intent, REQUEST_CUSTOM_WALLPAPER);
+        } catch (ActivityNotFoundException | SecurityException failure) {
+            Toast.makeText(this, "Pemilih gambar tidak tersedia di TV ini", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_CUSTOM_WALLPAPER || resultCode != RESULT_OK
+                || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+        File dir = Config.dir(this);
+        if (dir == null) {
+            Toast.makeText(this, "Penyimpanan wallpaper tidak tersedia", Toast.LENGTH_LONG).show();
+            return;
+        }
+        File folder = new File(dir, "wallpapers");
+        if (!folder.exists() && !folder.mkdirs()) {
+            Toast.makeText(this, "Folder wallpaper gagal dibuat", Toast.LENGTH_LONG).show();
+            return;
+        }
+        File destination = new File(folder, "custom-selected.jpg");
+        File temporary = new File(folder, "custom-selected.tmp");
+        try (InputStream input = getContentResolver().openInputStream(uri);
+             FileOutputStream output = new FileOutputStream(temporary)) {
+            if (input == null) throw new java.io.IOException("Unable to open image");
+            byte[] buffer = new byte[8192];
+            int count;
+            long total = 0;
+            while ((count = input.read(buffer)) != -1) {
+                total += count;
+                if (total > 25L * 1024L * 1024L) {
+                    throw new java.io.IOException("Image exceeds 25 MB");
+                }
+                output.write(buffer, 0, count);
+            }
+            output.flush();
+            if (total == 0) throw new java.io.IOException("Empty image");
+            if (destination.exists() && !destination.delete()) {
+                throw new java.io.IOException("Cannot replace previous image");
+            }
+            if (!temporary.renameTo(destination)) {
+                throw new java.io.IOException("Cannot save selected image");
+            }
+            choices.edit().putString(Config.WALLPAPER_CHOICE_KEY, destination.getName()).apply();
+            setResult(RESULT_OK);
+            Toast.makeText(this, "Wallpaper dari TV berhasil dipilih", Toast.LENGTH_SHORT).show();
+            refresh();
+        } catch (Exception failure) {
+            temporary.delete();
+            Toast.makeText(this, "Gagal menyimpan gambar, coba JPG/PNG lain (maks. 25 MB)", Toast.LENGTH_LONG).show();
+        }
     }
 
     private static int indexOf(List<File> images, String name) {
