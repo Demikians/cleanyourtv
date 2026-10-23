@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: "Build the release APK (only after explicit FIX JADI approval)"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,7 +34,7 @@ jobs:
         run: python3 -m unittest discover -s tests -v
 
   launcher:
-    name: Launcher build and unit tests
+    name: Launcher unit tests and lint (no APK)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,12 +46,17 @@ jobs:
         with:
           packages: platforms;android-34 build-tools;34.0.0
       - uses: gradle/actions/setup-gradle@v4
-      - name: Unit tests, lint and release build
+      - name: Unit tests and lint only — never assemble an APK in PR CI
         working-directory: launcher
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease
-      - name: The launcher stays small
+          ./gradlew --no-daemon testReleaseUnitTest lintRelease
+      - name: Build release APK (explicit manual opt-in only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release == true }}
+        working-directory: launcher
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Check release APK size
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_release == true }}
         run: |
           size=$(stat -c %s launcher/app/build/outputs/apk/release/app-release.apk)
           echo "release APK: $((size / 1024)) KB"
