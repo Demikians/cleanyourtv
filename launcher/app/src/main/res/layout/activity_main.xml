@@ -134,10 +134,11 @@
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:textColor="#FF91B7A6"
-                    android:textSize="9sp"
+                    android:text="CleanYourTV · Forest Edition"
+                    android:textSize="10sp"
                     android:fontFamily="@string/font_medium"
                     android:letterSpacing="0.16"
-                    android:visibility="gone" />
+                    android:visibility="visible" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
