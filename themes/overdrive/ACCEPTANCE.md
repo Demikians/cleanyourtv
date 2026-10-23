@@ -7,6 +7,9 @@ This checklist is the source of truth for the Overdrive branch. Do not start the
 - [x] Default visual language uses deep black/emerald with a restrained gold accent; wallpaper-derived accent updates the focus glass and prayer panel.
 - [x] A clean APK install gets twelve small, locally generated landscape wallpapers; the curated twelve JPG collection still takes precedence when the Overdrive theme folder is installed.
 - [x] Wallpapers rotate locally, decode one image at a time, use RGB_565 by default, and do not require network access.
+- [x] Wallpaper rotation timing is persisted and rechecked on Home resume; existing helper tests cover sequential/shuffle selection, interval boundaries and clock rollback.
+- [x] Adaptive palette is applied only after the matching wallpaper is displayed, preventing a late decode from tinting the UI with a stale image.
+- [x] The currently displayed wallpaper bitmap is detached and released when the launcher Activity is destroyed.
 - [x] Wallpaper choices are exposed in launcher settings even when the external theme bundle is absent.
 - [x] Clock/date header and compact CPU, free-memory, and free-storage stats are present in source.
 - [x] System stats are read on a background thread while Home is resumed.
