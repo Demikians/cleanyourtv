@@ -720,10 +720,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void buildMiniCalendar() {
         miniCalendarGrid.removeAllViews();
         String[] weekdays = new DateFormatSymbols(Locale.getDefault()).getShortWeekdays();
+        int firstDayOfWeek = Calendar.getInstance().getFirstDayOfWeek();
         for (int column = 0; column < 7; column++) {
             TextView label = new TextView(this);
-            label.setText(weekdays[(column + Calendar.SUNDAY - 1) % 7 + 1].substring(0,
-                    Math.min(1, weekdays[(column + Calendar.SUNDAY - 1) % 7 + 1].length())).toUpperCase(Locale.getDefault()));
+            int weekdayIndex = (firstDayOfWeek - Calendar.SUNDAY + column) % 7 + Calendar.SUNDAY;
+            String weekday = weekdays[weekdayIndex];
+            label.setText(weekday.substring(0, Math.min(1, weekday.length())).toUpperCase(Locale.getDefault()));
             label.setTextColor(0x80FFFFFF);
             label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
             label.setGravity(Gravity.CENTER);
@@ -758,7 +760,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         miniCalendarTitle.setText(new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(month.getTime()));
         int today = month.get(Calendar.DAY_OF_MONTH);
         month.set(Calendar.DAY_OF_MONTH, 1);
-        int offset = month.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY;
+        int offset = (month.get(Calendar.DAY_OF_WEEK) - month.getFirstDayOfWeek() + 7) % 7;
         int daysInMonth = month.getActualMaximum(Calendar.DAY_OF_MONTH);
         for (int index = 0; index < miniCalendarDays.length; index++) {
             int day = index - offset + 1;
