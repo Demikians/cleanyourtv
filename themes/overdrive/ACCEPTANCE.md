@@ -21,6 +21,21 @@ This checklist is the source of truth for the Overdrive branch. Do not start the
 - [x] Release workflow is manual-only to prevent an APK being produced before approval.
 - [x] Source-validation workflow runs unit tests and lint without assembling an APK.
 
+
+## Full agreed-plan cross-check
+
+This section cross-checks the accepted lightweight Demi Kianz × Nero plan against the actual source, not only the visual theme.
+
+- [x] Minimal dark emerald/black design with restrained gold, clock/date, compact locale-aware month calendar, and one-line CPU/RAM/storage readings.
+- [x] Lightweight local wallpapers with 45-minute rotation in the Overdrive preset; no live video, WebView, or real-time blur.
+- [x] Manually configurable app order through the launcher reorder mode; configured dock favorites are read from the theme and missing apps are skipped.
+- [x] Native prayer panel: Subuh–Isya times, next-prayer countdown, editable location label/coordinates, calculation method, and locally saved preferences.
+- [x] Daily rotating Indonesian Quran verse/reference; Ramadan imsak display can follow Hijri month or be forced on/off, with editable minutes before Subuh.
+- [x] Remote-accessible quick settings for TV settings, display, network, app management, and launcher settings.
+- [x] App-management shortcut now explains that app info can expose cache clearing and force-stop where the TV firmware supports those controls.
+- [ ] Directly clearing another app's cache or force-stopping arbitrary background apps from inside this launcher is not implemented: ordinary Android apps cannot reliably do that without privileged/system access. The shortcut opens the TV's app-management settings instead; Android/TV firmware controls which actions are available. YouTube is not force-stopped automatically.
+- [ ] Weather data panel is not in the accepted final minimal home-screen composition. Weather was discussed earlier, but was deferred from the final layout to avoid adding an unverified network data source or extra background work to a 1 GB RAM TV. Do not count it as a final-design blocker unless it is explicitly brought back into scope.
+
 ## Outstanding implementation
 
 - [x] Add a compact local month-calendar grid beneath the date, with localized month title, weekday initials ordered by the locale's first day of week, and today's date highlighted in gold; it is non-focusable and refreshes with the existing minute tick.
