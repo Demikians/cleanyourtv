@@ -1,3 +1,4 @@
+<!-- theme-status: draft; no genuine on-TV screenshot captured yet. Do not promote to the public themes table until captured. -->
 # CleanYourTV Forest Edition
 
 A low-memory CleanYourTV theme preset for TVs with about 1 GB RAM, styled as a calm, nature-first glass interface.
