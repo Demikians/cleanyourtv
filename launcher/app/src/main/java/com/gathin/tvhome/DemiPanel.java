@@ -427,10 +427,11 @@ final class DemiPanel {
 
     private int[] fetchPrayerMinutes(LocalDate date, double lat, double lon) throws Exception {
         String day = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.ROOT));
+        String zone = java.net.URLEncoder.encode(java.time.ZoneId.systemDefault().getId(), StandardCharsets.UTF_8);
         String url = "https://api.aladhan.com/v1/timings/" + day
                 + "?latitude=" + String.format(Locale.ROOT, "%.6f", lat)
                 + "&longitude=" + String.format(Locale.ROOT, "%.6f", lon)
-                + "&method=20&school=0";
+                + "&method=20&school=0&timezonestring=" + zone;
         JSONObject response = requestJson(url);
         JSONObject data = response.optJSONObject("data");
         JSONObject timings = data == null ? null : data.optJSONObject("timings");
@@ -503,8 +504,10 @@ final class DemiPanel {
             JSONArray array = new JSONArray();
             for (int value : times) array.put(value);
             cache.put("times", array);
-            prefs.edit().putString("prayer_cache_" + date, cache.toString())
-                    .putString(PRAYER_CACHE_LAST, cache.toString()).apply();
+            SharedPreferences.Editor editor = prefs.edit().putString("prayer_cache_" + date, cache.toString());
+            // Tomorrow's preload must not overwrite the last-known current/past-day fallback.
+            if (!date.isAfter(LocalDate.now())) editor.putString(PRAYER_CACHE_LAST, cache.toString());
+            editor.apply();
         } catch (Exception ignored) {
             // A cache failure must not take Home down.
         }
