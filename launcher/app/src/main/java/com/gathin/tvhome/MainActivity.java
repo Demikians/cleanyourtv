@@ -1017,9 +1017,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         final String returnKey = lastFocusedKey;
         final int returnSlot = lastFocused;
         final List<Cards.Card> none = Collections.emptyList();
-        // An updated app may bring new artwork; the backdrop is cheap to make again.
-        heroArtCache.clear();
-        heroArtKey = null;
+        // An updated app may bring new artwork; release cached native bitmaps before rebuilding.
+        releaseHeroArtCache();
         // One LEANBACK query for both the tiles and the card checks.
         final List<ResolveInfo> leanback = getPackageManager().queryIntentActivities(
                 new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0);
@@ -1109,8 +1108,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // they hold) would stay attached until Home comes back. setAdapter(null) recycles them now.
         grid.setAdapter(null);
         grid.getRecycledViewPool().clear();
-        heroArtCache.clear();
-        heroArtKey = null;
+        releaseHeroArtCache();
         tileRefresh.invalidate();
     }
 
@@ -1702,6 +1700,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /** Swaps the backdrop to this app's artwork: fade out, swap, fade in, the way the shelf's name changes. */
+    /** Detach and promptly release the small native bitmaps used by the cinematic shelf. */
+    private void releaseHeroArtCache() {
+        // ImageView keeps its own reference to the current bitmap even after the cache is cleared.
+        if (heroArt != null) heroArt.setImageDrawable(null);
+        for (Bitmap bitmap : new HashSet<>(heroArtCache.values())) {
+            if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
+        }
+        heroArtCache.clear();
+        heroArtKey = null;
+    }
+
     private void showHeroArt(int position) {
         String key = adapter.keyAt(position);
         if (key == null) return;
