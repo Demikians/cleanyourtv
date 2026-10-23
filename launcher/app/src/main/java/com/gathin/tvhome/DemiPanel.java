@@ -193,7 +193,7 @@ final class DemiPanel {
             // Keep the prayer card on the right half of the 16:9 home screen.
             // The clock/calendar/stats occupy the left; pinning both groups to the left made
             // the entire composition look stacked in one corner on a TV.
-            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(520), ViewGroup.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(dp(390), ViewGroup.LayoutParams.WRAP_CONTENT,
                     Gravity.TOP | Gravity.RIGHT);
             lp.rightMargin = dp(56);
             lp.topMargin = dp(142);
