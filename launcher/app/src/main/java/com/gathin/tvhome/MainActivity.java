@@ -165,6 +165,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView greeting;
     private TextView brandTagline;
     private DemiPanel demiPanel;
+    private FridayMoodPanel fridayMoodPanel;
     private View clockBlock;
     private View btnInputs;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
@@ -340,6 +341,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             updateMiniCalendar();
             updateRace();
             if (demiPanel != null) demiPanel.update();
+            if (fridayMoodPanel != null) fridayMoodPanel.update();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
             // signal level, so only it needs this minute's binder calls (about 7 ms on the UI thread).
             if (festive) updateWifiLabel();
@@ -392,6 +394,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = color; if (glass != null) glass.setAccent(color); if (demiPanel != null) demiPanel.setAccent(color); }));
         brandTagline = findViewById(R.id.brandTagline);
         demiPanel = new DemiPanel(this, root);
+        fridayMoodPanel = new FridayMoodPanel(this, root);
         sky = findViewById(R.id.sky);
         sky.setIntensity(cfg.skyIntensity);
         glass = findViewById(R.id.glass);
