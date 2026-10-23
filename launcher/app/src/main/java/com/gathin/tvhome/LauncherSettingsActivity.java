@@ -231,7 +231,7 @@ public final class LauncherSettingsActivity extends Activity {
             while ((count = input.read(buffer)) != -1) {
                 total += count;
                 if (total > 10L * 1024L * 1024L) {
-                    throw new java.io.IOException("Image exceeds 25 MB");
+                    throw new java.io.IOException("Image exceeds 10 MB");
                 }
                 output.write(buffer, 0, count);
             }
