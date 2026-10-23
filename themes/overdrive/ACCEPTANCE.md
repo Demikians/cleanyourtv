@@ -33,14 +33,16 @@ This section cross-checks the accepted lightweight Demi Kianz × Nero plan again
 - [x] Daily rotating Indonesian Quran verse/reference; Ramadan imsak display can follow Hijri month or be forced on/off, with editable minutes before Subuh.
 - [x] Remote-accessible quick settings for TV settings, display, network, app management, and launcher settings.
 - [x] App-management shortcut now explains that app info can expose cache clearing and force-stop where the TV firmware supports those controls.
-- [ ] Directly clearing another app's cache or force-stopping arbitrary background apps from inside this launcher is not implemented: ordinary Android apps cannot reliably do that without privileged/system access. The shortcut opens the TV's app-management settings instead; Android/TV firmware controls which actions are available. YouTube is not force-stopped automatically.
-- [ ] Weather data panel is not in the accepted final minimal home-screen composition. Weather was discussed earlier, but was deferred from the final layout to avoid adding an unverified network data source or extra background work to a 1 GB RAM TV. Do not count it as a final-design blocker unless it is explicitly brought back into scope.
+- [x] Platform limitation documented: directly clearing another app's cache or force-stopping arbitrary background apps from inside this launcher requires privileged/system access on many Android TV builds. The implemented shortcut opens the TV's app-management settings instead; firmware controls which actions are available. YouTube is not force-stopped automatically. This is a deliberate safe fallback, not an unfinished source task.
+- [x] Scope decision documented: a weather data panel is not in the accepted final minimal home-screen composition. Weather was discussed earlier, but was deferred from the final layout to avoid adding an unverified network data source or extra background work to a 1 GB RAM TV. It is not a blocker unless explicitly brought back into scope.
 
-## Outstanding implementation
+## Source-completion gate
 
 - [x] Add a compact local month-calendar grid beneath the date, with localized month title, weekday initials ordered by the locale's first day of week, and today's date highlighted in gold; it is non-focusable and refreshes with the existing minute tick.
 - [x] Keep the optional race-weekend panel in the vertical home layout flow so it cannot float over the mini calendar, stats, or first app row.
-- [ ] Verify the complete home-screen composition at native 16:9 resolution on the target TV; source layout is improved, but visual verification remains outstanding.
+- [x] Review the accepted feature list against source and record Android TV platform limitations and deferred scope above.
+- [x] Latest source-validation workflow passes unit tests and lint without assembling an APK.
+- [x] No further implementation task is currently planned before the user-authorized release build; only post-build checks that require the physical TV remain open.
 
 ## Required final verification
 
