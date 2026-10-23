@@ -1,11 +1,11 @@
-# Overdrive
+# CleanYourTV Forest Edition
 
 A low-memory CleanYourTV theme preset for TVs with about 1 GB RAM, styled as a calm, nature-first glass interface.
 
 ## Design choices
 
 - Landscape-first home layout with bright nature scenes behind a restrained glass UI.
-- Twelve local nature wallpapers rotate every 45 minutes when the Overdrive theme bundle is applied. On a clean APK install without the external theme folder, the launcher generates twelve small native landscape wallpapers locally, so the home screen still has a visual backdrop and makes no network request.
+- The theme starts with an included green tea-hills wallpaper. The existing wallpaper selector and the bundled nature wallpapers remain available, so the backdrop can be changed later without rebuilding the APK.
 - The focused-app glass rim and glow sample the current wallpaper once when that image is decoded, so ocean, sunset, forest, and sky scenes can shift the accent colour.
 - Wallpaper decoding uses RGB_565 by default (about 4 MB for a 1080p bitmap), avoids real-time blur, and keeps reduced motion enabled.
 - Four-column app grid, compact system stats, and a minimal top bar.
@@ -17,7 +17,7 @@ The dock lists YouTube, Netflix, Prime Video and Disney+. Missing apps are skipp
 
 The branch includes a GitHub Actions workflow that runs launcher unit tests, lint, release build, and an APK-size check. When the run succeeds, open the [Overdrive build workflow](https://github.com/Demikians/cleanyourtv/actions/workflows/overdrive-build.yml), open the latest successful run, and download the `demi-kianz-nero-overdrive-apk` artifact. Extract the ZIP to get `app-release.apk`.
 
-You can copy that APK to a USB drive and install it from the TV's file manager, if the TV permits installation from that source. The APK's built-in defaults include the Demi Kianz × Nero branding, a compact prayer card, compact stats, reduced motion, a subtle time-aware sky gradient, and a locally generated wallpaper fallback. The twelve curated JPG wallpapers and the full Overdrive JSON theme are also stored in `themes/overdrive`; applying the theme bundle replaces the generated fallback with those photographs.
+You can copy that APK to a USB drive and install it from the TV's file manager, if the TV permits installation from that source. The APK's built-in defaults include the Demi Kianz × Nero branding, a compact prayer card, compact stats, reduced motion, a subtle time-aware sky gradient, and a locally generated wallpaper fallback. The Forest Edition JSON theme and the starting wallpaper are stored in `themes/overdrive`; the other curated nature JPGs remain in its `wallpapers/` folder.
 
 ## Apply theme configuration
 
@@ -41,7 +41,7 @@ The Overdrive theme enables a compact, native prayer-and-verse card. It uses And
 
 Theme defaults:
 
-- Brand: `DEMI KIANZ × NERO` — `STAY IN YOUR ZONE · LIVE IN BALANCE`
+- Brand: `DEMI KIANZ × NERO` — `CleanYourTV · Forest Edition`
 - Prayer calculation: offline solar approximation using the Kemenag Indonesia angle convention; coordinates are editable on the TV
 - Ramadan: follows the device's Hijri calendar by default; can be forced on/off manually because local moon-sighting dates can differ
 - Imsak: shown only when Ramadan mode is active; defaults to 10 minutes before Subuh
