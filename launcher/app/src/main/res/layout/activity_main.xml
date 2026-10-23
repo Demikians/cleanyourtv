@@ -284,6 +284,28 @@
                             android:fontFamily="@string/font_regular"
                             android:letterSpacing="0.14"
                             android:textAllCaps="true" />
+
+                        <!-- Compact local month calendar, tucked under the date without taking remote focus. -->
+                        <TextView
+                            android:id="@+id/miniCalendarTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="7dp"
+                            android:textColor="#FFD7B56D"
+                            android:textSize="11sp"
+                            android:fontFamily="@string/font_medium"
+                            android:letterSpacing="0.08"
+                            android:focusable="false"
+                            android:importantForAccessibility="no" />
+
+                        <GridLayout
+                            android:id="@+id/miniCalendarGrid"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:columnCount="7"
+                            android:rowCount="7"
+                            android:focusable="false"
+                            android:importantForAccessibility="no" />
                     </LinearLayout>
                 </LinearLayout>
 
