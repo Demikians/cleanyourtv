@@ -1,7 +1,8 @@
 name: Overdrive Android build
 
 on:
-  # Manual only: do not produce a new APK until the user explicitly approves FIX JADI.
+  push:
+    branches: [demikians-overdrive]
   workflow_dispatch:
 
 permissions:
