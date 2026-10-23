@@ -24,7 +24,8 @@ This checklist is the source of truth for the Overdrive branch. Do not start the
 ## Outstanding implementation
 
 - [x] Add a compact local month-calendar grid beneath the date, with localized month title, weekday initials, and today's date highlighted in gold; it is non-focusable and refreshes with the existing minute tick.
-- [ ] Review the home-screen composition at 16:9 so the calendar, clock, stats, apps, and prayer panel remain minimal and do not overlap or clip.
+- [x] Keep the optional race-weekend panel in the vertical home layout flow so it cannot float over the mini calendar, stats, or first app row.
+- [ ] Verify the complete home-screen composition at native 16:9 resolution on the target TV; source layout is improved, but visual verification remains outstanding.
 
 ## Required final verification
 
