@@ -62,6 +62,7 @@ import android.view.Window;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -79,6 +80,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -173,6 +176,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean pillsShown;
     private TextView shamsiDate;
     private TextView stats;
+    private TextView miniCalendarTitle;
+    private GridLayout miniCalendarGrid;
+    private final TextView[] miniCalendarDays = new TextView[42];
     private List<RaceWeekend.Race> raceCalendar;
     private View racePanel;
     private TextView raceKicker, raceHeadline, raceSessions;
@@ -324,12 +330,14 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             updateClockVisibility();
+            updateMiniCalendar();
         }
     };
     private final Runnable minuteTick = new Runnable() {
         @Override
         public void run() {
             updateGreeting();
+            updateMiniCalendar();
             updateRace();
             if (demiPanel != null) demiPanel.update();
             // The pill follows the network callbacks and each return to Home; only the diya's flame follows the
@@ -426,6 +434,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi = findViewById(R.id.btnWifi);
         shamsiDate = findViewById(R.id.shamsiDate);
         stats = findViewById(R.id.stats);
+        miniCalendarTitle = findViewById(R.id.miniCalendarTitle);
+        miniCalendarGrid = findViewById(R.id.miniCalendarGrid);
+        buildMiniCalendar();
+        updateMiniCalendar();
         raceCalendar = cfg.raceCalendar;
         racePanel = findViewById(R.id.racePanel);
         raceKicker = findViewById(R.id.raceKicker);
@@ -702,6 +714,69 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /**
+     * Creates a tiny, non-focusable month grid once. Refreshing it only updates 42 labels and
+     * the month title, so it needs no timers of its own and remains cheap on low-memory TVs.
+     */
+    private void buildMiniCalendar() {
+        miniCalendarGrid.removeAllViews();
+        String[] weekdays = new DateFormatSymbols(Locale.getDefault()).getShortWeekdays();
+        for (int column = 0; column < 7; column++) {
+            TextView label = new TextView(this);
+            label.setText(weekdays[(column + Calendar.SUNDAY - 1) % 7 + 1].substring(0,
+                    Math.min(1, weekdays[(column + Calendar.SUNDAY - 1) % 7 + 1].length())).toUpperCase(Locale.getDefault()));
+            label.setTextColor(0x80FFFFFF);
+            label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
+            label.setGravity(Gravity.CENTER);
+            label.setIncludeFontPadding(false);
+            label.setFocusable(false);
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams(GridLayout.spec(0), GridLayout.spec(column));
+            params.width = Math.round(22 * density);
+            params.height = Math.round(16 * density);
+            miniCalendarGrid.addView(label, params);
+        }
+        for (int day = 0; day < miniCalendarDays.length; day++) {
+            TextView cell = new TextView(this);
+            cell.setTextColor(0xD9FFFFFF);
+            cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
+            cell.setGravity(Gravity.CENTER);
+            cell.setIncludeFontPadding(false);
+            cell.setFocusable(false);
+            cell.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams(
+                    GridLayout.spec(day / 7 + 1), GridLayout.spec(day % 7));
+            params.width = Math.round(22 * density);
+            params.height = Math.round(18 * density);
+            miniCalendarGrid.addView(cell, params);
+            miniCalendarDays[day] = cell;
+        }
+    }
+
+    /** Updates the local month, weekday alignment and today's gold marker. */
+    private void updateMiniCalendar() {
+        if (miniCalendarTitle == null || miniCalendarGrid == null) return;
+        Calendar month = Calendar.getInstance();
+        miniCalendarTitle.setText(new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(month.getTime()));
+        int today = month.get(Calendar.DAY_OF_MONTH);
+        month.set(Calendar.DAY_OF_MONTH, 1);
+        int offset = month.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY;
+        int daysInMonth = month.getActualMaximum(Calendar.DAY_OF_MONTH);
+        for (int index = 0; index < miniCalendarDays.length; index++) {
+            int day = index - offset + 1;
+            TextView cell = miniCalendarDays[index];
+            if (day < 1 || day > daysInMonth) {
+                cell.setText("");
+                cell.setTextColor(0x00FFFFFF);
+                cell.setTypeface(null, android.graphics.Typeface.NORMAL);
+            } else {
+                cell.setText(Integer.toString(day));
+                boolean isToday = day == today;
+                cell.setTextColor(isToday ? 0xFFFFD7B56D : 0xD9FFFFFF);
+                cell.setTypeface(null, isToday ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            }
+        }
+    }
+
+    /**
      * handle_view_inputs: switch InputsRequestActivity, the VIEW_INPUTS handler, on or off. It is disabled in the
      * manifest, so a TV with its own input picker never sees it; only the sets that need it turn it on. Written
      * only when the state differs, so an ordinary start does not touch the package manager.
@@ -814,6 +889,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (openLiveTvAfterBoot()) return;
         updateGreeting();
+        updateMiniCalendar();
         updateRace();
         if (demiPanel != null) demiPanel.update();
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
