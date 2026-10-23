@@ -770,7 +770,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             } else {
                 cell.setText(Integer.toString(day));
                 boolean isToday = day == today;
-                cell.setTextColor(isToday ? 0xFFFFD7B56D : 0xD9FFFFFF);
+                cell.setTextColor(isToday ? 0xFFD7B56D : 0xD9FFFFFF);
                 cell.setTypeface(null, isToday ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             }
         }
