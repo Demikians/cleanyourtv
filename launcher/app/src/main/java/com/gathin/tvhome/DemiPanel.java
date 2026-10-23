@@ -266,48 +266,348 @@ final class DemiPanel {
     }
     void update() {
         if (!enabled) return;
-        locationView.setText(location);
+        maybeRefreshOnlineData();
         LocalDate today = LocalDate.now();
-        PrayerTimes.Day day = PrayerTimes.calculate(today, latitude, longitude, PrayerTimes.Method.fromConfig(method));
-        int[] times = day.prayers();
-        String[] names = day.names();
-        java.time.LocalTime timeNow = java.time.LocalTime.now();
-        int now = timeNow.getHour() * 60 + timeNow.getMinute();
-        int next = -1;
-        for (int i = 0; i < times.length; i++) {
-            prayerTimes[i].setText(PrayerTimes.format(times[i]));
-            if (next < 0 && now < times[i]) next = i;
+        String todayKey = today.toString();
+        int[] times = apiPrayerMinutes;
+        boolean scheduleFresh = times != null && times.length == 5 && todayKey.equals(apiPrayerDate);
+        boolean hasSchedule = times != null && times.length == 5;
+
+        String status = location;
+        if (scheduleFresh) {
+            if (apiPrayerFromCache || apiPrayerOffline) status += " · CACHE";
+        } else if (hasSchedule) {
+            status += " · DATA LAMA";
+        } else {
+            status += " · OFFLINE";
         }
+        locationView.setText(status);
+
+        int now = java.time.LocalTime.now().getHour() * 60 + java.time.LocalTime.now().getMinute();
+        if (hasSchedule) {
+            for (int i = 0; i < times.length; i++) prayerTimes[i].setText(PrayerTimes.format(times[i]));
+        } else {
+            for (TextView value : prayerTimes) value.setText("--:--");
+        }
+
+        // Maghrib is the fixed countdown target. Never calculate one from an old day's schedule.
+        boolean beforeMaghrib = scheduleFresh && now < times[3];
         for (int i = 0; i < prayerCells.length; i++) {
-            boolean selected = i == next;
-            prayerCells[i].setBackground(roundRect(selected ? ((accentColor & 0x00FFFFFF) | 0x33000000) : 0x251B2822,
+            boolean selected = beforeMaghrib && i == 3;
+            prayerCells[i].setBackground(roundRect(
+                    selected ? ((accentColor & 0x00FFFFFF) | 0x33000000) : 0x251B2822,
                     selected ? ((accentColor & 0x00FFFFFF) | 0x88000000) : 0, 11));
             prayerTimes[i].setTextColor(selected ? accentColor : Color.WHITE);
         }
-        int target;
-        String nextName;
-        long remaining;
-        if (next >= 0) {
-            target = times[next];
-            nextName = names[next];
-            remaining = target - now;
+        if (!scheduleFresh) {
+            countdownView.setText(hasSchedule
+                    ? "JADWAL LAMA · SAMBUNGKAN INTERNET"
+                    : "DATA TIDAK TERSEDIA · PERIKSA WIFI");
+        } else if (now < times[3]) {
+            setCountdown(times[3] - now);
+        } else if (today.plusDays(1).toString().equals(tomorrowPrayerDate) && tomorrowMaghrib >= 0) {
+            setCountdown((1440L - now) + tomorrowMaghrib);
         } else {
-            target = PrayerTimes.calculate(today.plusDays(1), latitude, longitude,
-                    PrayerTimes.Method.fromConfig(method)).fajr;
-            nextName = "SUBUH";
-            remaining = (1440L - now) + target;
+            countdownView.setText("MAGHRIB BERIKUTNYA · MENUNGGU DATA");
         }
-        countdownView.setText(nextName + "  ·  " + (remaining / 60) + "J "
-                + String.format(Locale.ROOT, "%02d", remaining % 60) + "M");
 
         boolean ramadan = isRamadan();
         View imsakRow = (View) imsakView.getParent();
         imsakRow.setVisibility(ramadan ? View.VISIBLE : View.GONE);
-        if (ramadan) imsakView.setText(PrayerTimes.format(PrayerTimes.imsak(day.fajr, imsakOffset))
-                + "  ·  " + imsakOffset + " menit sebelum Subuh");
-        int quoteIndex = Math.floorMod((int) today.toEpochDay(), VERSES.length);
-        quoteView.setText("“" + VERSES[quoteIndex][0] + "”");
-        quoteSource.setText(VERSES[quoteIndex][1]);
+        if (ramadan && hasSchedule) {
+            imsakView.setText(PrayerTimes.format(PrayerTimes.imsak(times[0], imsakOffset))
+                    + "  ·  " + imsakOffset + " menit sebelum Subuh"
+                    + (scheduleFresh ? "" : " · DATA LAMA"));
+        } else if (ramadan) {
+            imsakView.setText("DATA TIDAK TERSEDIA");
+        }
+        renderVerse(today);
+    }
+
+    private void setCountdown(long remainingMinutes) {
+        long bounded = Math.max(0L, remainingMinutes);
+        countdownView.setText((bounded / 60) + "J "
+                + String.format(Locale.ROOT, "%02d", bounded % 60) + "M");
+    }
+
+    private void renderVerse(LocalDate today) {
+        if (verseTranslation == null || verseTranslation.trim().isEmpty()) {
+            arabicVerseView.setText("");
+            quoteView.setText("Ayat hari ini belum tersedia. Sambungkan TV ke internet.");
+            quoteSource.setText("DATA TIDAK TERSEDIA · MYQURAN API V3");
+            return;
+        }
+        arabicVerseView.setText(verseArabic);
+        quoteView.setText("“" + verseTranslation + "”");
+        boolean fresh = today.toString().equals(verseDate);
+        String status = verseReference + " · Sumber: MyQuran API v3";
+        if (!fresh) status += " · DATA TERSIMPAN TANGGAL " + verseDate + " (LAMA)";
+        else if (verseFromCache) status += " · CACHE";
+        quoteSource.setText(status);
+    }
+
+    private void maybeRefreshOnlineData() {
+        if (refreshInFlight) return;
+        long now = System.currentTimeMillis();
+        boolean prayerMissing = apiPrayerMinutes == null || !LocalDate.now().toString().equals(apiPrayerDate);
+        boolean verseMissing = verseTranslation.isEmpty() || !LocalDate.now().toString().equals(verseDate);
+        if ((prayerMissing || verseMissing || apiPrayerOffline) && now - lastRefreshAttempt >= RETRY_AFTER_MS) {
+            refreshOnlineData(false);
+        }
+    }
+
+    private synchronized void refreshOnlineData(boolean force) {
+        if (!enabled || refreshInFlight) return;
+        long now = System.currentTimeMillis();
+        if (!force && now - lastRefreshAttempt < RETRY_AFTER_MS) return;
+        refreshInFlight = true;
+        lastRefreshAttempt = now;
+        final LocalDate requestedDay = LocalDate.now();
+        final double requestedLat = latitude;
+        final double requestedLon = longitude;
+        Thread worker = new Thread(() -> {
+            try {
+                int[] todayTimes = fetchPrayerMinutes(requestedDay, requestedLat, requestedLon);
+                savePrayerCache(requestedDay, requestedLat, requestedLon, todayTimes);
+                if (Math.abs(latitude - requestedLat) < 0.0001 && Math.abs(longitude - requestedLon) < 0.0001) {
+                    apiPrayerMinutes = todayTimes;
+                    apiPrayerDate = requestedDay.toString();
+                    apiPrayerFromCache = false;
+                    apiPrayerOffline = false;
+                }
+            } catch (Exception ignored) {
+                apiPrayerOffline = true;
+            }
+            try {
+                int[] tomorrow = fetchPrayerMinutes(requestedDay.plusDays(1), requestedLat, requestedLon);
+                savePrayerCache(requestedDay.plusDays(1), requestedLat, requestedLon, tomorrow);
+                if (Math.abs(latitude - requestedLat) < 0.0001 && Math.abs(longitude - requestedLon) < 0.0001) {
+                    tomorrowMaghrib = tomorrow[3];
+                    tomorrowPrayerDate = requestedDay.plusDays(1).toString();
+                }
+            } catch (Exception ignored) {
+                // Without a valid next-day schedule, don't invent tomorrow's countdown.
+            }
+            try {
+                int index = Math.floorMod((int) requestedDay.toEpochDay(), VERSE_REFS.length);
+                int sura = VERSE_REFS[index][0];
+                int aya = VERSE_REFS[index][1];
+                JSONObject response = requestJson("https://api.myquran.com/v3/quran/" + sura + "/" + aya);
+                JSONObject data = response.optJSONObject("data");
+                JSONObject surah = data == null ? null : data.optJSONObject("surah");
+                if (!response.optBoolean("status", false) || data == null || surah == null) {
+                    throw new IOException("Unexpected MyQuran response");
+                }
+                String arab = data.optString("arab", "").trim();
+                String translation = data.optString("translation", "").trim();
+                if (arab.isEmpty() || translation.isEmpty()) throw new IOException("Incomplete verse response");
+                String surahName = surah.optString("name_latin", "").trim();
+                if (surahName.isEmpty()) surahName = "Surah " + sura;
+                String reference = "QS. " + surahName + " " + sura + ":" + aya;
+                JSONObject cache = new JSONObject();
+                cache.put("date", requestedDay.toString());
+                cache.put("arab", arab);
+                cache.put("translation", translation);
+                cache.put("reference", reference);
+                prefs.edit().putString(QURAN_CACHE, cache.toString()).apply();
+                verseArabic = arab;
+                verseTranslation = translation;
+                verseReference = reference;
+                verseDate = requestedDay.toString();
+                verseFromCache = false;
+            } catch (Exception ignored) {
+                // Keep the last valid verse only, with its original date visibly marked as old.
+            }
+            refreshInFlight = false;
+            if (cardView != null) cardView.post(this::update);
+        }, "cleanyourtv-data-refresh");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private int[] fetchPrayerMinutes(LocalDate date, double lat, double lon) throws Exception {
+        String day = date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.ROOT));
+        String url = "https://api.aladhan.com/v1/timings/" + day
+                + "?latitude=" + String.format(Locale.ROOT, "%.6f", lat)
+                + "&longitude=" + String.format(Locale.ROOT, "%.6f", lon)
+                + "&method=20&school=0";
+        JSONObject response = requestJson(url);
+        JSONObject data = response.optJSONObject("data");
+        JSONObject timings = data == null ? null : data.optJSONObject("timings");
+        if (response.optInt("code", 0) != 200 || timings == null) {
+            throw new IOException("Unexpected Aladhan response");
+        }
+        String[] keys = {"Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"};
+        int[] result = new int[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            result[i] = parsePrayerMinute(timings.optString(keys[i], ""));
+            if (result[i] < 0 || result[i] >= 1440) throw new IOException("Invalid prayer time");
+        }
+        if (!(result[0] < result[1] && result[1] < result[2]
+                && result[2] < result[3] && result[3] < result[4])) {
+            throw new IOException("Invalid prayer time sequence");
+        }
+        return result;
+    }
+
+    private static int parsePrayerMinute(String value) {
+        if (value == null) return -1;
+        String clean = value.trim();
+        if (clean.length() < 5) return -1;
+        clean = clean.substring(0, 5);
+        if (clean.charAt(2) != ':') return -1;
+        try {
+            int hour = Integer.parseInt(clean.substring(0, 2));
+            int minute = Integer.parseInt(clean.substring(3, 5));
+            if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return -1;
+            return hour * 60 + minute;
+        } catch (NumberFormatException error) {
+            return -1;
+        }
+    }
+
+    private JSONObject requestJson(String address) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(address).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(6000);
+            connection.setReadTimeout(6000);
+            connection.setUseCaches(true);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "CleanYourTV-Forest-Edition/1.0");
+            int code = connection.getResponseCode();
+            if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
+            try (InputStream stream = connection.getInputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    body.append(line);
+                    if (body.length() > 1024 * 1024) throw new IOException("Response too large");
+                }
+                return new JSONObject(body.toString());
+            }
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    private void savePrayerCache(LocalDate date, double lat, double lon, int[] times) {
+        try {
+            JSONObject cache = new JSONObject();
+            cache.put("date", date.toString());
+            cache.put("latitude", lat);
+            cache.put("longitude", lon);
+            cache.put("method", 20);
+            JSONArray array = new JSONArray();
+            for (int value : times) array.put(value);
+            cache.put("times", array);
+            prefs.edit().putString("prayer_cache_" + date, cache.toString())
+                    .putString(PRAYER_CACHE_LAST, cache.toString()).apply();
+        } catch (Exception ignored) {
+            // A cache failure must not take Home down.
+        }
+    }
+
+    private void loadCachedData() {
+        String today = LocalDate.now().toString();
+        JSONObject prayer = cachedPrayerFor(today);
+        if (prayer == null) prayer = cachedPrayerLast();
+        if (prayer != null) {
+            int[] times = readPrayerArray(prayer);
+            if (times != null) {
+                apiPrayerMinutes = times;
+                apiPrayerDate = prayer.optString("date", "");
+                apiPrayerFromCache = true;
+                apiPrayerOffline = true;
+            }
+        }
+        JSONObject tomorrow = cachedPrayerFor(LocalDate.now().plusDays(1).toString());
+        if (tomorrow != null) {
+            int[] times = readPrayerArray(tomorrow);
+            if (times != null) {
+                tomorrowMaghrib = times[3];
+                tomorrowPrayerDate = tomorrow.optString("date", "");
+            }
+        }
+        try {
+            JSONObject verse = new JSONObject(prefs.getString(QURAN_CACHE, "{}"));
+            verseArabic = verse.optString("arab", "").trim();
+            verseTranslation = verse.optString("translation", "").trim();
+            verseReference = verse.optString("reference", "").trim();
+            verseDate = verse.optString("date", "");
+            verseFromCache = true;
+        } catch (Exception ignored) {
+            verseArabic = "";
+            verseTranslation = "";
+            verseReference = "";
+            verseDate = "";
+        }
+    }
+
+    private JSONObject cachedPrayerFor(String date) {
+        try {
+            JSONObject cache = new JSONObject(prefs.getString("prayer_cache_" + date, "{}"));
+            return matchesCoordinates(cache) ? cache : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private JSONObject cachedPrayerLast() {
+        try {
+            JSONObject cache = new JSONObject(prefs.getString(PRAYER_CACHE_LAST, "{}"));
+            return matchesCoordinates(cache) ? cache : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private boolean matchesCoordinates(JSONObject cache) {
+        if (cache == null) return false;
+        return Math.abs(cache.optDouble("latitude", 999) - latitude) < 0.0001
+                && Math.abs(cache.optDouble("longitude", 999) - longitude) < 0.0001
+                && cache.optInt("method", 0) == 20;
+    }
+
+    private static int[] readPrayerArray(JSONObject cache) {
+        JSONArray array = cache == null ? null : cache.optJSONArray("times");
+        if (array == null || array.length() != 5) return null;
+        int[] result = new int[5];
+        for (int i = 0; i < result.length; i++) {
+            int value = array.optInt(i, -1);
+            if (value < 0 || value >= 1440) return null;
+            result[i] = value;
+        }
+        return result;
+    }
+
+    private void applyLastKnownLocationIfAllowed() {
+        boolean manual = prefs.contains("latitude") && !prefs.getBoolean("auto_location", false);
+        if (manual || context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) return;
+        try {
+            LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+            if (manager == null) return;
+            Location best = null;
+            for (String provider : manager.getProviders(true)) {
+                Location candidate = manager.getLastKnownLocation(provider);
+                if (candidate != null && (best == null || candidate.getTime() > best.getTime())) best = candidate;
+            }
+            if (best != null) {
+                latitude = best.getLatitude();
+                longitude = best.getLongitude();
+                location = "LOKASI TV";
+                prefs.edit().putFloat("latitude", (float) latitude)
+                        .putFloat("longitude", (float) longitude)
+                        .putString("location", location).putBoolean("auto_location", true).apply();
+            }
+        } catch (SecurityException ignored) {
+            // Location permission may be withdrawn while Home is running; the manual selector remains available.
+        } catch (RuntimeException ignored) {
+            // TVs without a working location provider use the saved/configured fallback.
+        }
     }
 
     private boolean isRamadan() {
@@ -333,7 +633,7 @@ final class DemiPanel {
         addField(form, "Longitude", lonInput);
 
         Spinner methodInput = new Spinner(context);
-        String[] methods = {"Kemenag Indonesia", "Muslim World League", "ISNA", "Egypt", "Umm al-Qura"};
+        String[] methods = {"Kemenag Indonesia · Aladhan method 20"};
         methodInput.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, methods));
         methodInput.setSelection(methodIndex(method));
         addField(form, "Metode perhitungan", methodInput);
@@ -360,12 +660,20 @@ final class DemiPanel {
                         latitude = newLat;
                         longitude = newLon;
                         imsakOffset = newOffset;
-                        method = methodName(methodInput.getSelectedItemPosition());
+                        method = "kemenag";
                         ramadanMode = new String[]{"auto", "on", "off"}[ramadanInput.getSelectedItemPosition()];
                         prefs.edit().putString("location", location).putFloat("latitude", (float) latitude)
                                 .putFloat("longitude", (float) longitude).putString("method", method)
-                                .putString("ramadan_mode", ramadanMode).putInt("imsak_offset", imsakOffset).apply();
+                                .putString("ramadan_mode", ramadanMode).putInt("imsak_offset", imsakOffset)
+                                .putBoolean("auto_location", false).apply();
+                        apiPrayerMinutes = null;
+                        apiPrayerDate = "";
+                        apiPrayerFromCache = true;
+                        apiPrayerOffline = true;
+                        tomorrowMaghrib = -1;
+                        tomorrowPrayerDate = "";
                         update();
+                        refreshOnlineData(true);
                     } catch (RuntimeException error) {
                         new AlertDialog.Builder(context)
                                 .setMessage("Periksa angka: latitude -90 sampai 90, longitude -180 sampai 180, imsak 0 sampai 60 menit.")
