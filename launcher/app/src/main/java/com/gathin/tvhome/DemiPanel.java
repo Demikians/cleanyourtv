@@ -15,6 +15,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -644,6 +645,28 @@ final class DemiPanel {
         EditText latInput = input(Double.toString(latitude), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText lonInput = input(Double.toString(longitude), InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText imsakInput = input(Integer.toString(imsakOffset), InputType.TYPE_CLASS_NUMBER);
+
+        // Optional city presets make setup usable with a TV remote; coordinates remain editable below.
+        String[] cityNames = {"Pilih kota (opsional)", "Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Semarang", "Surakarta", "Medan", "Makassar", "Denpasar", "Palembang", "Balikpapan", "Banjarmasin", "Pontianak", "Manado", "Mataram", "Aceh"};
+        double[][] cityCoordinates = {
+                {0, 0}, {-6.2088, 106.8456}, {-6.9175, 107.6191}, {-7.2575, 112.7521},
+                {-7.7956, 110.3695}, {-6.9667, 110.4167}, {-7.5755, 110.8243},
+                {3.5952, 98.6722}, {-5.1477, 119.4327}, {-8.6705, 115.2126},
+                {-2.9761, 104.7754}, {-1.2379, 116.8529}, {-3.3186, 114.5944},
+                {-0.0263, 109.3425}, {1.4748, 124.8421}, {-8.5833, 116.1167}, {5.5483, 95.3238}
+        };
+        Spinner cityInput = new Spinner(context);
+        cityInput.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_spinner_dropdown_item, cityNames));
+        addField(form, "Pilih kota Indonesia (opsional)", cityInput);
+        cityInput.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position <= 0) return;
+                locationInput.setText(cityNames[position]);
+                latInput.setText(Double.toString(cityCoordinates[position][0]));
+                lonInput.setText(Double.toString(cityCoordinates[position][1]));
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
         addField(form, "Nama lokasi", locationInput);
         addField(form, "Latitude", latInput);
         addField(form, "Longitude", lonInput);
