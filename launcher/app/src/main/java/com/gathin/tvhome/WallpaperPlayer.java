@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
@@ -54,6 +55,8 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
+    /** Palette values are tiny; keep them by filename so only the wallpaper actually shown can tint the UI. */
+    private final Map<String, Integer> paletteColors = new ConcurrentHashMap<>();
     private final IntConsumer paletteListener;
 
     WallpaperPlayer(Context context, FrameLayout root, Config config, IntConsumer paletteListener) {
@@ -105,6 +108,7 @@ final class WallpaperPlayer {
             Bitmap bitmap = decode(first);
             if (bitmap != null) {
                 show(bitmap);
+                applyPalette(first);
                 // The picture covers the whole screen: the root's plain colour under it is overdraw.
                 root.setBackground(null);
                 displayed = first.getName();
@@ -133,6 +137,12 @@ final class WallpaperPlayer {
         active = false;
         closed = true;
         decoder.shutdownNow();
+        // Release the displayed texture when this Activity is recreated or destroyed.
+        image.setImageDrawable(null);
+        Bitmap old = current;
+        current = null;
+        if (old != null && !old.isRecycled()) old.recycle();
+        paletteColors.clear();
     }
 
     void update() {
@@ -161,6 +171,7 @@ final class WallpaperPlayer {
                     return;
                 }
                 show(bitmap);
+                applyPalette(next);
                 displayed = next.getName();
                 showCaption(true);
                 if (!displayed.equals(previous) || changed == 0) {
@@ -225,6 +236,12 @@ final class WallpaperPlayer {
         StringBuilder key = new StringBuilder();
         for (File file : images) key.append(file.getName()).append(':').append(file.length()).append(';');
         return key.toString();
+    }
+
+    /** Apply only the palette belonging to the picture currently being displayed, never a stale decode. */
+    private void applyPalette(File file) {
+        Integer color = paletteColors.get(file.getName());
+        if (paletteListener != null && color != null) paletteListener.accept(color);
     }
 
     /** Puts a picture on screen and releases the previous one after a frame has drawn the new one. */
@@ -339,7 +356,7 @@ final class WallpaperPlayer {
             options.inMutable = dimColor != 0;
             Bitmap decoded = BitmapFactory.decodeFile(file.getPath(), options);
             if (decoded == null) return null;
-            if (paletteListener != null) { int accent = AdaptivePalette.accent(decoded); root.post(() -> paletteListener.accept(accent)); }
+            if (paletteListener != null) paletteColors.put(file.getName(), AdaptivePalette.accent(decoded));
             if (dimColor != 0) new Canvas(decoded).drawColor(dimColor);
             // One copy in GPU memory instead of a software bitmap plus its texture; the decode stays off the UI
             // thread for rotations, and Home's return no longer uploads 4-8 MB to the GPU.
