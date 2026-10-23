@@ -13,7 +13,7 @@ This checklist is the source of truth for the Overdrive branch. Do not start the
 - [x] Wallpaper choices are exposed in launcher settings even when the external theme bundle is absent.
 - [x] Clock/date header and compact CPU, free-memory, and free-storage stats are present in source.
 - [x] System stats are read on a background thread while Home is resumed.
-- [x] Cinematic-shelf artwork cache detaches its ImageView and promptly recycles native bitmaps on low-memory trim and app-list rebuild.
+- [x] Cinematic-shelf artwork cache detaches its ImageView and promptly recycles native bitmaps on low-memory trim, app-list rebuild, and Activity destruction.
 - [x] Prayer-times card is reduced in width, padding and text size; the next-prayer highlight follows the active wallpaper accent.
 - [x] App tiles are modestly larger (200 dp wide) and icon-only apps use 60 dp artwork for TV-distance readability.
 - [x] App Library uses the top-bar button when available instead of showing a duplicate floating footer.
