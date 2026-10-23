@@ -102,10 +102,14 @@ class AgentsNumbersTest(unittest.TestCase):
     def test_commands_are_the_ones_ci_runs(self):
         ci = CI.read_text(encoding="utf-8")
         for command in ("python3 -m unittest discover -s tests -v",
-                        "./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease",
+                        "./gradlew --no-daemon testReleaseUnitTest lintRelease",
                         "CLEANYOURTV_STRICT"):
             with self.subTest(command=command):
                 self.assertIn(command, ci, "ci.yml changed; update AGENTS.md and this test")
+                self.assertNotIn("testReleaseUnitTest lintRelease assembleRelease", ci,
+                                 "ordinary CI must not build an APK before FIX JADI")
+                self.assertIn("inputs.build_release == true", ci,
+                              "release APK build must require an explicit manual opt-in")
                 self.assertIn(command, text(), "AGENTS.md no longer gives the command CI runs")
 
 
