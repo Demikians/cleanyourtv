@@ -230,7 +230,7 @@ public final class LauncherSettingsActivity extends Activity {
             long total = 0;
             while ((count = input.read(buffer)) != -1) {
                 total += count;
-                if (total > 25L * 1024L * 1024L) {
+                if (total > 10L * 1024L * 1024L) {
                     throw new java.io.IOException("Image exceeds 25 MB");
                 }
                 output.write(buffer, 0, count);
@@ -249,7 +249,7 @@ public final class LauncherSettingsActivity extends Activity {
             refresh();
         } catch (Exception failure) {
             temporary.delete();
-            Toast.makeText(this, "Gagal menyimpan gambar, coba JPG/PNG lain (maks. 25 MB)", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Gagal menyimpan gambar, coba JPG/PNG lain (maks. 10 MB)", Toast.LENGTH_LONG).show();
         }
     }
 
