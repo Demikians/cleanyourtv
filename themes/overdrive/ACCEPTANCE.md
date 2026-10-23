@@ -19,7 +19,7 @@ This checklist is the source of truth for the Overdrive branch. Do not start the
 
 ## Outstanding implementation
 
-- [ ] Add the requested compact month-calendar grid near the clock/date area. The current home layout has clock/date and stats, but no compact month grid yet.
+- [x] Add a compact local month-calendar grid beneath the date, with localized month title, weekday initials, and today's date highlighted in gold; it is non-focusable and refreshes with the existing minute tick.
 - [ ] Review the home-screen composition at 16:9 so the calendar, clock, stats, apps, and prayer panel remain minimal and do not overlap or clip.
 
 ## Required final verification
