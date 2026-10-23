@@ -394,16 +394,17 @@ final class DemiPanel {
                 int aya = VERSE_REFS[index][1];
                 JSONObject response = requestJson("https://api.myquran.com/v3/quran/" + sura + "/" + aya);
                 JSONObject data = response.optJSONObject("data");
-                JSONObject surah = data == null ? null : data.optJSONObject("surah");
-                if (!response.optBoolean("status", false) || data == null || surah == null) {
+                // MyQuran's /quran/{surah}/{ayah} detail endpoint returns the verse object
+                // directly under data; surah metadata belongs to the /quran/{surah} endpoint.
+                if (!response.optBoolean("status", false) || data == null
+                        || data.optInt("surah_number", sura) != sura
+                        || data.optInt("ayah_number", aya) != aya) {
                     throw new IOException("Unexpected MyQuran response");
                 }
                 String arab = data.optString("arab", "").trim();
                 String translation = data.optString("translation", "").trim();
                 if (arab.isEmpty() || translation.isEmpty()) throw new IOException("Incomplete verse response");
-                String surahName = surah.optString("name_latin", "").trim();
-                if (surahName.isEmpty()) surahName = "Surah " + sura;
-                String reference = "QS. " + surahName + " " + sura + ":" + aya;
+                String reference = "QS. " + surahName(sura) + " " + sura + ":" + aya;
                 JSONObject cache = new JSONObject();
                 cache.put("date", requestedDay.toString());
                 cache.put("arab", arab);
@@ -423,6 +424,18 @@ final class DemiPanel {
         }, "cleanyourtv-data-refresh");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    private static String surahName(int number) {
+        switch (number) {
+            case 2: return "Al-Baqarah";
+            case 13: return "Ar-Ra'd";
+            case 39: return "Az-Zumar";
+            case 57: return "Al-Hadid";
+            case 65: return "At-Talaq";
+            case 94: return "Al-Insyirah";
+            default: return "Surah " + number;
+        }
     }
 
     private int[] fetchPrayerMinutes(LocalDate date, double lat, double lon) throws Exception {
