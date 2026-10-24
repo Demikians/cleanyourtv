@@ -222,27 +222,7 @@
                             android:letterSpacing="0.10"
                             android:textAllCaps="true" />
 
-                        <!-- Compact local month calendar, tucked under the date without taking remote focus. -->
-                        <TextView
-                            android:id="@+id/miniCalendarTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:textColor="#FF8FBF9F"
-                            android:textSize="10sp"
-                            android:fontFamily="@string/font_medium"
-                            android:letterSpacing="0.08"
-                            android:focusable="false"
-                            android:importantForAccessibility="no" />
-
-                        <GridLayout
-                            android:id="@+id/miniCalendarGrid"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:columnCount="7"
-                            android:rowCount="7"
-                            android:focusable="false"
-                            android:importantForAccessibility="no" />
+                        <!-- Monthly calendar intentionally omitted for a cleaner TV home. -->
                     </LinearLayout>
                 </LinearLayout>
 
