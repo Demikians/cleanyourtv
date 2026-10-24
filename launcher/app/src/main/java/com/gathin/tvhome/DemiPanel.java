@@ -50,7 +50,7 @@ final class DemiPanel {
     private final java.util.List<TextView> accentTextViews = new java.util.ArrayList<>();
     private static final int MUTED = Color.rgb(164, 184, 176);
     private static final String PREFS = "demi_prayer_settings";
-    // References are fixed; Arabic text and translation are fetched from MyQuran API v3.
+    // Translation and Arabic script are fetched from QuranEnc; version metadata is checked at refresh time.
     private static final int[][] VERSE_REFS = {
         {94, 5}, {2, 286}, {13, 28}, {2, 153},
         {39, 53}, {65, 3}, {2, 152}, {57, 4}
@@ -58,6 +58,7 @@ final class DemiPanel {
     private static final long RETRY_AFTER_MS = 15L * 60L * 1000L;
     private static final String PRAYER_CACHE_LAST = "prayer_cache_last";
     private static final String QURAN_CACHE = "quran_cache";
+    private static final String QURAN_TRANSLATION_KEY = "indonesian_sabiq";
 
     private final Context context;
     private final SharedPreferences prefs;
@@ -95,6 +96,8 @@ final class DemiPanel {
     private volatile String verseTranslation = "";
     private volatile String verseReference = "";
     private volatile String verseDate = "";
+    private volatile String verseVersion = "";
+    private volatile String versePublisher = "Sabiq Company";
     private volatile boolean verseFromCache = true;
     private volatile long lastRefreshAttempt;
     private volatile boolean refreshInFlight;
@@ -226,7 +229,7 @@ final class DemiPanel {
         quoteView.setMaxLines(3);
         quoteView.setLineSpacing(dp(2), 1.0f);
         card.addView(quoteView, wrap());
-        quoteSource = accentText("SUMBER: MYQURAN API V3", 9, Typeface.BOLD);
+        quoteSource = accentText("SUMBER: QURANENC.COM", 9, Typeface.BOLD);
         quoteSource.setPadding(0, dp(5), 0, 0);
         quoteSource.setMaxLines(2);
         card.addView(quoteSource, wrap());
@@ -335,13 +338,13 @@ final class DemiPanel {
         if (verseTranslation == null || verseTranslation.trim().isEmpty()) {
             arabicVerseView.setText("");
             quoteView.setText("Ayat hari ini belum tersedia. Sambungkan TV ke internet.");
-            quoteSource.setText("DATA TIDAK TERSEDIA · MYQURAN API V3");
+            quoteSource.setText("DATA TIDAK TERSEDIA · QURANENC.COM");
             return;
         }
         arabicVerseView.setText(verseArabic);
         quoteView.setText("“" + verseTranslation + "”");
         boolean fresh = today.toString().equals(verseDate);
-        String status = verseReference + " · Sumber: MyQuran API v3";
+        String status = verseReference + " · QuranEnc.com · " + versePublisher + (verseVersion.isEmpty() ? "" : " · v" + verseVersion);
         if (!fresh) status += " · DATA TERSIMPAN TANGGAL " + verseDate + " (LAMA)";
         else if (verseFromCache) status += " · CACHE";
         quoteSource.setText(status);
@@ -393,29 +396,54 @@ final class DemiPanel {
                 int index = Math.floorMod((int) requestedDay.toEpochDay(), VERSE_REFS.length);
                 int sura = VERSE_REFS[index][0];
                 int aya = VERSE_REFS[index][1];
-                JSONObject response = requestJson("https://api.myquran.com/v3/quran/" + sura + "/" + aya);
-                JSONObject data = response.optJSONObject("data");
-                // MyQuran's /quran/{surah}/{ayah} detail endpoint returns the verse object
-                // directly under data; surah metadata belongs to the /quran/{surah} endpoint.
-                if (!response.optBoolean("status", false) || data == null
-                        || data.optInt("surah_number", sura) != sura
-                        || data.optInt("ayah_number", aya) != aya) {
-                    throw new IOException("Unexpected MyQuran response");
+                // Resolve the chosen Indonesian translation from QuranEnc metadata so the
+                // displayed version is grounded in the live source, not a guessed key/version.
+                JSONObject listResponse = requestJson("https://quranenc.com/api/v1/translations/list/id?localization=id");
+                JSONArray translations = listResponse.optJSONArray("translations");
+                if (translations == null) throw new IOException("QuranEnc translation list unavailable");
+                String liveVersion = "";
+                String livePublisher = "Sabiq Company";
+                boolean translationFound = false;
+                for (int i = 0; i < translations.length(); i++) {
+                    JSONObject item = translations.optJSONObject(i);
+                    if (item != null && QURAN_TRANSLATION_KEY.equals(item.optString("key", ""))) {
+                        liveVersion = item.optString("version", "").trim();
+                        String title = item.optString("title", "").trim();
+                        String description = item.optString("description", "").trim();
+                        if (!title.isEmpty()) livePublisher = title;
+                        else if (!description.isEmpty()) livePublisher = description;
+                        translationFound = !liveVersion.isEmpty();
+                        break;
+                    }
                 }
-                String arab = data.optString("arab", "").trim();
+                if (!translationFound) throw new IOException("Chosen QuranEnc translation/version not listed");
+                JSONObject response = requestJson("https://quranenc.com/api/v1/translation/aya/"
+                        + QURAN_TRANSLATION_KEY + "/" + sura + "/" + aya);
+                JSONObject data = response.optJSONObject("result");
+                if (data == null || data.optInt("sura", -1) != sura || data.optInt("aya", -1) != aya) {
+                    throw new IOException("Unexpected QuranEnc verse response");
+                }
+                String arab = data.optString("arabic_text", "").trim();
                 String translation = data.optString("translation", "").trim();
-                if (arab.isEmpty() || translation.isEmpty()) throw new IOException("Incomplete verse response");
+                String footnotes = data.optString("footnotes", "");
+                if (arab.isEmpty() || translation.isEmpty()) throw new IOException("Incomplete QuranEnc verse response");
                 String reference = "QS. " + surahName(sura) + " " + sura + ":" + aya;
                 JSONObject cache = new JSONObject();
                 cache.put("date", requestedDay.toString());
                 cache.put("arab", arab);
                 cache.put("translation", translation);
                 cache.put("reference", reference);
+                cache.put("translation_key", QURAN_TRANSLATION_KEY);
+                cache.put("version", liveVersion);
+                cache.put("publisher", livePublisher);
+                cache.put("footnotes", footnotes);
                 prefs.edit().putString(QURAN_CACHE, cache.toString()).apply();
                 verseArabic = arab;
                 verseTranslation = translation;
                 verseReference = reference;
                 verseDate = requestedDay.toString();
+                verseVersion = liveVersion;
+                versePublisher = livePublisher;
                 verseFromCache = false;
             } catch (Exception ignored) {
                 // Keep the last valid verse only, with its original date visibly marked as old.
@@ -554,12 +582,16 @@ final class DemiPanel {
             verseTranslation = verse.optString("translation", "").trim();
             verseReference = verse.optString("reference", "").trim();
             verseDate = verse.optString("date", "");
+            verseVersion = verse.optString("version", "");
+            versePublisher = verse.optString("publisher", "Sabiq Company");
             verseFromCache = true;
         } catch (Exception ignored) {
             verseArabic = "";
             verseTranslation = "";
             verseReference = "";
             verseDate = "";
+            verseVersion = "";
+            versePublisher = "Sabiq Company";
         }
     }
 
