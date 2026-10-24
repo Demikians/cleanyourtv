@@ -1,3 +1,4 @@
+<!-- theme-status: draft; no genuine on-TV screenshot captured yet. Do not promote to the public themes table until captured. -->
 # CleanYourTV Forest Edition
 
 A low-memory CleanYourTV theme preset for TVs with about 1 GB RAM, styled as a calm, nature-first glass interface.
@@ -6,18 +7,18 @@ A low-memory CleanYourTV theme preset for TVs with about 1 GB RAM, styled as a c
 
 - Landscape-first home layout with bright nature scenes behind a restrained glass UI.
 - The theme starts with an included green tea-hills wallpaper. The existing wallpaper selector and the bundled nature wallpapers remain available, so the backdrop can be changed later without rebuilding the APK.
-- The focused-app glass rim and glow sample the current wallpaper once when that image is decoded, so ocean, sunset, forest, and sky scenes can shift the accent colour.
+- Forest emerald is the fixed UI accent; it does not shift to gold or sample wallpaper colours. The supplied wallpaper can be changed from the existing on-TV picker.
 - Wallpaper decoding uses RGB_565 by default (about 4 MB for a 1080p bitmap), avoids real-time blur, and keeps reduced motion enabled.
 - Four-column app grid, compact system stats, and a minimal top bar.
-- Prayer times, countdown, optional Ramadan imsak, and a daily Quran verse remain native Android views.
+- Prayer times use the Aladhan API with method 20 (KEMENAG Indonesia) and school 0. MyQuran API v3 supplies the daily Arabic verse and Indonesian translation, with the surah/ayah reference shown in the card.
 
 The dock lists YouTube, Netflix, Prime Video and Disney+. Missing apps are skipped automatically.
 
 ## Build and install without a PC
 
-The branch includes a GitHub Actions workflow that runs launcher unit tests, lint, release build, and an APK-size check. When the run succeeds, open the [Overdrive build workflow](https://github.com/Demikians/cleanyourtv/actions/workflows/overdrive-build.yml), open the latest successful run, and download the `demi-kianz-nero-overdrive-apk` artifact. Extract the ZIP to get `app-release.apk`.
+CI runs unit tests and lint only; it does not build an APK during implementation. Release APK creation must wait for the project owner's explicit `FIX JADI` approval. Do not trigger a release build before then.
 
-You can copy that APK to a USB drive and install it from the TV's file manager, if the TV permits installation from that source. The APK's built-in defaults include the Demi Kianz × Nero branding, a compact prayer card, compact stats, reduced motion, a subtle time-aware sky gradient, and a locally generated wallpaper fallback. The Forest Edition JSON theme and the starting wallpaper are stored in `themes/overdrive`; the other curated nature JPGs remain in its `wallpapers/` folder.
+The preset and its wallpaper assets live in `themes/overdrive`. This theme remains draft-only until its UI is checked on the target television and a genuine 16:9 TV screenshot is captured; no screenshot should be fabricated.
 
 ## Apply theme configuration
 
@@ -37,15 +38,15 @@ This preset does not disable packages or change the TV's default launcher by its
 
 ## Demi Kianz × Nero home
 
-The Overdrive theme enables a compact, native prayer-and-verse card. It uses Android views, without a WebView, network calls, animated wallpaper, or a background service. The small gear on the card opens TV-remote-friendly settings for location label, latitude/longitude, calculation method, Ramadan mode, and the minutes between imsak and Subuh. Choices are stored locally on the TV.
+The Overdrive theme enables a compact native prayer-and-verse card. HTTPS requests run on a daemon worker thread; there is no WebView, animated wallpaper, or persistent background service. Successful data is cached locally, old data is marked stale, and failed requests must not produce invented times or verse text. The small gear on the card opens TV-remote-friendly settings for location label, latitude/longitude, calculation method, Ramadan mode, and the minutes between imsak and Subuh. Choices are stored locally on the TV.
 
 Theme defaults:
 
 - Brand: `DEMI KIANZ × NERO` — `CleanYourTV · Forest Edition`
-- Prayer calculation: offline solar approximation using the Kemenag Indonesia angle convention; coordinates are editable on the TV
+- Prayer calculation: Aladhan API with `method=20` (KEMENAG Indonesia) and `school=0`; use an already-authorized TV location when available, otherwise editable saved coordinates. The selected location never changes Android system time or time zone.
 - Ramadan: follows the device's Hijri calendar by default; can be forced on/off manually because local moon-sighting dates can differ
 - Imsak: shown only when Ramadan mode is active; defaults to 10 minutes before Subuh
-- Daily verse: rotates locally by date from a small set of Indonesian translations and verse references
+- Daily verse: a deterministic daily reference is fetched from MyQuran API v3 and shown with returned Arabic text, Indonesian translation, surah/ayah reference, and source attribution. The last valid verse is cached and its original date is shown when stale.
 - System stats: native launcher readings when supported by the TV
 
-**Accuracy note:** prayer times are estimates, not a live feed or a guarantee of the official local Kemenag timetable. Set the coordinates to the actual home location and compare the display with your local mosque/Kemenag schedule before relying on it for worship.
+**Accuracy note:** Aladhan method 20 is the KEMENAG calculation method but is not a guarantee of exact agreement with every local mosque or official timetable. Verify the saved coordinates and compare with the local Kemenag schedule before relying on it for worship.

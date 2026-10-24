@@ -69,12 +69,12 @@ share their TV's list afterwards, follow [Add a TV list](#add-a-tv-list) below.
 | `CODE_OF_CONDUCT.md` | Includes the rule against publishing device identifiers, Wi-Fi names and IPs. |
 | `examples/` | One folder per tested TV model: `debloat.txt`, sometimes a `README.md` and a `config.json`. Indexed in `examples/README.md`. |
 | `docs/` | `docs/TROUBLESHOOTING.md`, `docs/REMOTE.md` (another home, over Tailscale), `docs/modules.md` and `docs/specs/card.md` (module cards), `docs/PRESS.md`, and `docs/devices/` for models with notes but no tested list. |
-| `launcher/` | The reference launcher, package `com.gathin.tvhome`: plain Java, AndroidX RecyclerView and DynamicAnimation, `minSdk` 26, no `INTERNET` permission. |
+| `launcher/` | The CleanYourTV fork launcher, package `com.gathin.tvhome`: plain Java, AndroidX RecyclerView and DynamicAnimation, `minSdk` 26. The Forest Edition prayer/Quran card makes bounded HTTPS requests for Aladhan method 20 and MyQuran API v3; no analytics or persistent polling service. |
 | `themes/` | One folder per theme: `config.json`, a required `screenshot.jpg`, optional wallpapers. Keys are documented in `themes/README.md`. |
 | `addons/` | Optional module-card apps, each its own Gradle project, never built into the launcher. |
 | `tools/` | The ADB client and the scripts: `tv.py`, `b64push.py`, `relay.py` (guide: `tools/relay.md`), `disable.sh`, `restore.sh`, `recovery.py`, `check.py`, `privacy.py`, `theme.sh`, `adb-closed.py`, `bench.py`, `trace.py` and `trace_report.py` (guide: `tools/trace.md`, optional `tools/requirements-perf.txt`), `race_calendar.py`. Shell scripts have PowerShell twins (`disable.ps1` and the like). `readme_stats.py`, `readme_featured.py` and `readme_card.py` draw the README card. Each script's usage is in its first lines: read it before running it. |
 | `tests/` | Python `unittest` suite: list format, README tables, press counts, themes, add-ons, the Home guard and the tools against fake TVs. |
-| `.github/workflows/` | `ci.yml` (tests, launcher build, APK size gate), `addons.yml`, `maintainer-bot.yml`. |
+| `.github/workflows/` | `ci.yml` (Python tests plus launcher JVM tests/lint; no APK during implementation), `addons.yml`, `maintainer-bot.yml`. |
 | `.github/maintainer/MAINTAINER.md` | The review policy the maintainer and the PR bot apply. |
 | `.github/pull_request_template.md` | The PR checklist. Fill it in. |
 
@@ -239,7 +239,7 @@ no switch. No new dependencies in `launcher/app/build.gradle` without an issue f
 | Check | Command or rule |
 |---|---|
 | Tests, as CI runs them | `python3 -m unittest discover -s tests -v` after `python3 -m venv tools/venv` and `tools/venv/bin/pip install -r tools/requirements.txt`. On `main`, CI sets `CLEANYOURTV_STRICT=1`, which also checks the README's TV-model count. |
-| Launcher, if you touched `launcher/` | JDK 17, Android SDK platform 34, build-tools 34.0.0. In `launcher/`: `./gradlew --no-daemon testReleaseUnitTest lintRelease assembleRelease`. Lint must stay at zero errors. |
+| Launcher, if you touched `launcher/` | JDK 17, Android SDK platform 34, build-tools 34.0.0. In `launcher/`: `./gradlew --no-daemon testReleaseUnitTest lintRelease`. Lint must stay at zero errors. Do not build an APK until the owner explicitly says `FIX JADI`. |
 | APK size gate | `launcher/app/build/outputs/apk/release/app-release.apk` must be under 491,520 B (480 KB). Linux: `stat -c %s`, macOS: `stat -f %z`. |
 | README rows | A new list has its row in `README.md` and `examples/README.md`; a theme in `themes/README.md`; an add-on in `addons/README.md`. |
 | One topic per PR | A TV list never rides inside a launcher feature PR. A device's list plus small fixes for that same device can be one PR. |
@@ -255,8 +255,7 @@ Never do these in a PR:
 - **No prebuilt APKs or binaries** in the repo, not even as CI artifacts. People build from source.
 - **No uninstalling.** No `pm uninstall` in a list or a script. `pm hide` or `pm block` only with the matching
   undo written in the list header.
-- **No network in the launcher:** no `INTERNET` permission, no network features, no analytics or telemetry, no
-  background services or polling, no blur or video. It targets TVs with 1 GB of RAM.
+- **Keep the Forest Edition network feature narrow:** HTTPS only for the approved Aladhan prayer schedule and MyQuran verse; no analytics, telemetry, WebView, persistent service or aggressive polling. All HTTP work stays off the main thread, uses timeouts, has a response-size bound, and falls back to labeled cached/unavailable data. The launcher still targets TVs with 1 GB of RAM.
 - **No new launcher dependencies** without discussing them in an issue first.
 - **No changes to the safety rules** in `PROMPT.md`, the Home guard and other safety checks in
   `tools/disable.sh`, `tools/check.py` and `launcher/build-and-install.sh`, or the list of packages the TV
@@ -268,8 +267,7 @@ Never do these in a PR:
   already has the optional DNS extra; a note that Private DNS works on that TV is fine.
 - **No secrets or identifiers** in commits, lists or screenshots: no IP addresses, Wi-Fi names, account emails,
   serial numbers, Android IDs, MAC addresses or ADB keys. Use `<tv ip>` or `192.168.1.50` in docs.
-- **Don't edit `.github/workflows/`** or the APK size gate in a normal PR. A PR whose main content is a new CI
-  workflow that builds or publishes releases is closed.
+- **No automatic APK builds during implementation.** Regular PR/push CI may run unit tests and lint only; never assemble or publish an APK before the owner explicitly says `FIX JADI`. Keep any release action manual and opt-in, and preserve the 480 KB gate.
 - **Don't open factory or test menus** on a TV to see what they do. Factory packages may be disabled, never
   launched.
 - **No root, no getting around app-store protection, no private builds** others cannot reproduce from this repo.

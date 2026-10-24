@@ -133,7 +133,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private FrameLayout root;
     private WallpaperPlayer wallpaperPlayer;
     private GlassView glass;
-    private int adaptiveAccentColor = 0xFFD7B56D;
+    private int adaptiveAccentColor = 0xFF8FBF9F;
     private View ambient;
     private TextView heroName;
     /** The top shelf: heroName, plus the cinematic shelf's "Last opened" line and dock position dots. */
@@ -391,7 +391,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // black under it is a second full-screen fill on every frame for nothing. The starting window still uses
         // the theme's background, so launch looks the same.
         getWindow().setBackgroundDrawable(null);
-        wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = color; if (glass != null) glass.setAccent(color); if (demiPanel != null) demiPanel.setAccent(color); }));
+        wallpaperPlayer = new WallpaperPlayer(this, root, cfg, color -> root.post(() -> { adaptiveAccentColor = 0xFF8FBF9F; if (glass != null) glass.setAccent(festive ? festival.accentColor() : adaptiveAccentColor); if (demiPanel != null) demiPanel.setAccent(adaptiveAccentColor); }));
         brandTagline = findViewById(R.id.brandTagline);
         demiPanel = new DemiPanel(this, root);
         fridayMoodPanel = new FridayMoodPanel(this, root);
@@ -721,6 +721,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * the month title, so it needs no timers of its own and remains cheap on low-memory TVs.
      */
     private void buildMiniCalendar() {
+        // Forest Edition keeps the left clock/date area clean; no full-month calendar on the TV home.
+        if (miniCalendarGrid == null || miniCalendarTitle == null) return;
         miniCalendarGrid.removeAllViews();
         String[] weekdays = new DateFormatSymbols(Locale.getDefault()).getShortWeekdays();
         int firstDayOfWeek = Calendar.getInstance().getFirstDayOfWeek();
@@ -775,7 +777,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             } else {
                 cell.setText(Integer.toString(day));
                 boolean isToday = day == today;
-                cell.setTextColor(isToday ? 0xFFD7B56D : 0xD9FFFFFF);
+                cell.setTextColor(isToday ? 0xFF8FBF9F : 0xD9FFFFFF);
                 cell.setTypeface(null, isToday ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             }
         }
@@ -2312,7 +2314,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (demiPanel != null && demiPanel.hasBrand()) {
             greeting.setText(demiPanel.brandTitle());
-            greeting.setTextColor(0xFFD7B56D);
+            greeting.setTextColor(0xFF8FBF9F);
             greeting.setTextSize(13f);
             if (brandTagline != null) {
                 brandTagline.setText(demiPanel.brandTagline());

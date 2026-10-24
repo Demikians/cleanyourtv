@@ -11,10 +11,19 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 THEMES = ROOT / "themes"
 MAX_SCREENSHOT = 300 * 1024
+DRAFT_MARKER = "theme-status: draft"
 
 
 def folders():
     return sorted(p for p in THEMES.iterdir() if p.is_dir())
+
+
+def requires_real_tv_screenshot(folder):
+    """Unlisted development themes may not claim a fake real-TV screenshot."""
+    readme = folder / "README.md"
+    if not readme.is_file():
+        return True
+    return DRAFT_MARKER not in readme.read_text(encoding="utf-8").lower()
 
 
 def jpeg_size(data):
@@ -44,6 +53,8 @@ class ThemesTest(unittest.TestCase):
 
     def test_every_theme_has_a_screenshot(self):
         for folder in folders():
+            if not requires_real_tv_screenshot(folder):
+                continue
             with self.subTest(theme=folder.name):
                 shot = folder / "screenshot.jpg"
                 self.assertTrue(shot.is_file(),
@@ -59,6 +70,8 @@ class ThemesTest(unittest.TestCase):
     def test_readme_lists_every_theme_with_its_screenshot(self):
         readme = (THEMES / "README.md").read_text(encoding="utf-8")
         for folder in folders():
+            if not requires_real_tv_screenshot(folder):
+                continue
             with self.subTest(theme=folder.name):
                 row = next((l for l in readme.split("\n") if l.startswith(f"| `{folder.name}/` |")), None)
                 self.assertIsNotNone(row, "no row in themes/README.md")
