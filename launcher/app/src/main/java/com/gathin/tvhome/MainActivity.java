@@ -721,6 +721,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * the month title, so it needs no timers of its own and remains cheap on low-memory TVs.
      */
     private void buildMiniCalendar() {
+        // Forest Edition keeps the left clock/date area clean; no full-month calendar on the TV home.
+        if (miniCalendarGrid == null || miniCalendarTitle == null) return;
         miniCalendarGrid.removeAllViews();
         String[] weekdays = new DateFormatSymbols(Locale.getDefault()).getShortWeekdays();
         int firstDayOfWeek = Calendar.getInstance().getFirstDayOfWeek();
