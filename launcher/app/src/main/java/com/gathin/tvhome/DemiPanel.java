@@ -225,13 +225,15 @@ final class DemiPanel {
         LinearLayout.LayoutParams arabicLp = wrap();
         arabicLp.bottomMargin = dp(5);
         card.addView(arabicVerseView, arabicLp);
-        quoteView = text("Ayat harian menunggu koneksi data.", 12, Color.rgb(238, 245, 241), Typeface.NORMAL);
-        quoteView.setMaxLines(3);
+        quoteView = text("Ayat harian menunggu koneksi data.", 11, Color.rgb(238, 245, 241), Typeface.NORMAL);
+        quoteView.setMaxLines(2);
         quoteView.setLineSpacing(dp(2), 1.0f);
         card.addView(quoteView, wrap());
         quoteSource = accentText("SUMBER: QURANENC.COM", 9, Typeface.BOLD);
         quoteSource.setPadding(0, dp(5), 0, 0);
-        quoteSource.setMaxLines(2);
+        quoteSource.setMaxLines(1);
+        quoteSource.setSingleLine(true);
+        quoteSource.setEllipsize(android.text.TextUtils.TruncateAt.END);
         card.addView(quoteSource, wrap());
 
         if (enabled) {
