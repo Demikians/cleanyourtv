@@ -217,7 +217,7 @@ final class DemiPanel {
         LinearLayout.LayoutParams verseHeadingLp = wrap();
         verseHeadingLp.bottomMargin = dp(5);
         card.addView(verseHeading, verseHeadingLp);
-        arabicVerseView = text("", 18, Color.WHITE, Typeface.NORMAL);
+        arabicVerseView = text("", 16, Color.WHITE, Typeface.NORMAL);
         arabicVerseView.setGravity(Gravity.RIGHT);
         arabicVerseView.setTextDirection(View.TEXT_DIRECTION_RTL);
         arabicVerseView.setMaxLines(2);
